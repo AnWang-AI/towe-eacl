@@ -96,7 +96,7 @@ class Trainer():
             if self.cuda:
                 all_input_ids, all_target, all_opinion, all_mask = \
                     all_input_ids.cuda(), all_target.cuda(), all_opinion.cuda(), all_mask.cuda()
-                datas = datas.cuda()
+                datas = datas.to(device)
 
             # model eval.
             with torch.no_grad():
