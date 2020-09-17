@@ -167,8 +167,8 @@ class Trainer():
                 all_mask = datas.mask
 
                 if self.cuda:
-                    all_input_ids, all_target, all_opinion, all_mask = \
-                        all_input_ids.cuda(), all_target.cuda(), all_opinion.cuda(), all_mask.cuda()
+                    all_input_ids, all_target, all_opinion = \
+                        all_input_ids.cuda(), all_target.cuda(), all_opinion.cuda()
                     datas = datas.to(device)
 
                 labels = all_opinion
@@ -181,14 +181,14 @@ class Trainer():
 
                 scores = scores.cpu()
                 scores = torch.masked_select(scores, all_mask.reshape(-1, 100, 1).expand(-1, 100, 4)>0)
-                scores = scores.cuda()
+                scores = scores.to(device)
 
                 scores = scores.view(-1, 4)
                 # Calculate loss.
 
                 labels = labels.cpu()
                 labels = torch.masked_select(labels, all_mask>0)
-                labels = labels.cuda()
+                labels = labels.to(device)
 
                 labels = labels.view(-1)
                 batch_loss = self.criterion(scores, labels)
