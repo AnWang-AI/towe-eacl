@@ -135,9 +135,13 @@ class Trainer():
         tprint(info)
         self.save_log(info, self.args.val_log)
 
-        # score_dict = score_BIO(pred, y, ignore_index=-1)
-        # BIO_info = 'BIO precision: {:.3f}, BIO recall: {:.3f}, BIO f1: {:.3f}'.format(score_dict["precsion"], score_dict["recall"], score_dict["f1"])
-        # tprint(BIO_info)
+        pred_list = [pred.tolist() for pred in preds]
+        label_list = [y.tolist() for y in ys]
+        score_dict = score_BIO(pred_list, label_list, ignore_index=0)
+        BIO_info = 'BIO precision: {:.3f}, BIO recall: {:.3f}, BIO f1: {:.3f}'.format(score_dict["precision"],
+                                                                                      score_dict["recall"],
+                                                                                      score_dict["f1"])
+        tprint(BIO_info)
 
 
         print('-' * 40)
@@ -210,9 +214,6 @@ class Trainer():
 
             y, pred = torch.cat(ys, dim=0).cpu().numpy(), torch.cat(preds, dim=0).cpu().numpy()
 
-            pred_list = [pred.tolist() for pred in preds]
-            label_list = [y.tolist() for y in ys]
-
             # Epoch average loss and accuracy.
             loss = total_loss / total_num
 
@@ -228,8 +229,8 @@ class Trainer():
             # Save train info to log file.
             self.save_log(info, self.args.train_log)
 
-            # pred = pred.reshape(-1, 100)
-            # y = y.reshape(-1, 100)
+            pred_list = [pred.tolist() for pred in preds]
+            label_list = [y.tolist() for y in ys]
             score_dict = score_BIO(pred_list, label_list, ignore_index=0)
             BIO_info = 'BIO precision: {:.3f}, BIO recall: {:.3f}, BIO f1: {:.3f}'.format(score_dict["precision"],
                                                                                           score_dict["recall"],
