@@ -154,6 +154,10 @@ class Trainer():
             best_accuracy = 0.0
 
         total_num = len(self.train_loader)
+
+        pred_list = []
+        label_list = []
+
         for i in range(self.args.epochs):
             epoch_index = i + 1
             total_loss = 0.0
@@ -206,6 +210,9 @@ class Trainer():
 
             y, pred = torch.cat(ys, dim=0).cpu().numpy(), torch.cat(preds, dim=0).cpu().numpy()
 
+            pred_list.append(preds.tolist())
+            label_list.append(ys.tolist())
+
             # Epoch average loss and accuracy.
             loss = total_loss / total_num
 
@@ -221,9 +228,9 @@ class Trainer():
             # Save train info to log file.
             self.save_log(info, self.args.train_log)
 
-            pred = pred.reshape(-1, 100)
-            y = y.reshape(-1, 100)
-            score_dict = score_BIO(pred.tolist(), y.tolist(), ignore_index=-1)
+            # pred = pred.reshape(-1, 100)
+            # y = y.reshape(-1, 100)
+            score_dict = score_BIO(pred_list, label_list, ignore_index=-1)
             BIO_info = 'BIO precision: {:.3f}, BIO recall: {:.3f}, BIO f1: {:.3f}'.format(score_dict["precsion"],
                                                                                           score_dict["recall"],
                                                                                           score_dict["f1"])
