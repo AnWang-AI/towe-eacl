@@ -166,12 +166,12 @@ class Trainer():
                 all_opinion = datas.opinion
                 all_mask = datas.mask
 
-                labels = all_opinion
-
                 if self.cuda:
                     all_input_ids, all_target, all_opinion, all_mask = \
                         all_input_ids.cuda(), all_target.cuda(), all_opinion.cuda(), all_mask.cuda()
                     datas = datas.to(device)
+
+                labels = all_opinion
 
                 # zero the parameter gradients
                 self.optimizer.zero_grad()
