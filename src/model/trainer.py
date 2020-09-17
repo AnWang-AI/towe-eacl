@@ -230,7 +230,7 @@ class Trainer():
 
             # pred = pred.reshape(-1, 100)
             # y = y.reshape(-1, 100)
-            score_dict = score_BIO(pred_list, label_list, ignore_index=-1)
+            score_dict = score_BIO(pred_list, label_list, ignore_index=0)
             BIO_info = 'BIO precision: {:.3f}, BIO recall: {:.3f}, BIO f1: {:.3f}'.format(score_dict["precsion"],
                                                                                           score_dict["recall"],
                                                                                           score_dict["f1"])
