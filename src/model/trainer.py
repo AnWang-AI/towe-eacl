@@ -337,9 +337,9 @@ if __name__ == "__main__":
 
     # print(model)
 
-    loss_op = torch.nn.CrossEntropyLoss()
+    # loss_op = torch.nn.CrossEntropyLoss()
     # loss_op = torch.nn.NLLLoss()
-    # loss_op = MultiFocalLoss(num_class=6, gamma=2)
+    loss_op = MultiFocalLoss(num_class=6, gamma=2)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
