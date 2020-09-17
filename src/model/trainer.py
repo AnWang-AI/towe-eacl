@@ -210,8 +210,8 @@ class Trainer():
 
             y, pred = torch.cat(ys, dim=0).cpu().numpy(), torch.cat(preds, dim=0).cpu().numpy()
 
-            pred_list.append(preds)
-            label_list.append(ys)
+            pred_list = [pred.tolist() for pred in preds]
+            label_list = [y.tolist() for y in ys]
 
             # Epoch average loss and accuracy.
             loss = total_loss / total_num
