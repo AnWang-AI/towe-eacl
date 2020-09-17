@@ -209,10 +209,7 @@ class Trainer():
             # Epoch average loss and accuracy.
             loss = total_loss / total_num
 
-            if i % 5 == 4:
-                accuracy = self.metric_f1_score(y, pred, detail=True)
-            else:
-                accuracy = self.metric_f1_score(y, pred, detail=False)
+            accuracy = self.metric_f1_score(y, pred, detail=False)
 
             ie_score, ie_precision, ie_recall = self.IE_score(y, pred)
 
@@ -224,11 +221,11 @@ class Trainer():
             # Save train info to log file.
             self.save_log(info, self.args.train_log)
 
-            # score_dict = score_BIO(pred, y, ignore_index=-1)
-            # BIO_info = 'BIO precision: {:.3f}, BIO recall: {:.3f}, BIO f1: {:.3f}'.format(score_dict["precsion"],
-            #                                                                               score_dict["recall"],
-            #                                                                               score_dict["f1"])
-            # tprint(BIO_info)
+            score_dict = score_BIO(pred.to_list(), y.to_list(), ignore_index=-1)
+            BIO_info = 'BIO precision: {:.3f}, BIO recall: {:.3f}, BIO f1: {:.3f}'.format(score_dict["precsion"],
+                                                                                          score_dict["recall"],
+                                                                                          score_dict["f1"])
+            tprint(BIO_info)
 
             # Eval every {eval_frequency} train epoch
             if epoch_index % self.args.eval_frequency == 0:

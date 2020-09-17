@@ -142,3 +142,10 @@ def score_BIO(predicted, golden, ignore_index=-1):
     f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
     score_dict = {'precision': precision, 'recall': recall, 'f1': f1}
     return score_dict
+
+
+def category_from_output(output):
+    top_n, top_i = output.topk(1)  # Tensor out of Variable with .data
+    # print(top_i)
+    category_i = top_i.view(output.size()[0], -1).detach().cpu().numpy().tolist()
+    return category_i
