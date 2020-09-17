@@ -217,8 +217,9 @@ class Trainer():
             ie_score, ie_precision, ie_recall = self.IE_score(y, pred)
 
             # Print train info.
-            info = 'Epoch: {}, loss: {:.3f}, IE score: {:.3f}, IE score: {:.3f}, IE f1: {:.3f}'.format(epoch_index,
-                                                                                                          loss, ie_precision, ie_recall, ie_score)
+            info = 'loss: {:.3f}, IE precision: {:.3f}, IE recall: {:.3f}, IE f1: {:.3f}'.format(loss,
+                                                                                                 ie_precision,
+                                                                                                 ie_recall, ie_score)
             tprint(info)
             # Save train info to log file.
             self.save_log(info, self.args.train_log)
