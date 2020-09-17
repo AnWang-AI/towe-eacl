@@ -91,26 +91,26 @@ class Trainer():
             all_opinion = datas.opinion
             all_mask = datas.mask
 
-            labels = all_opinion
-
             if self.cuda:
                 all_input_ids, all_target, all_opinion, all_mask = \
                     all_input_ids.cuda(), all_target.cuda(), all_opinion.cuda(), all_mask.cuda()
                 datas = datas.to(device)
+
+            labels = all_opinion
 
             # model eval.
             with torch.no_grad():
                 scores = self.model(datas)
 
                 scores = scores.cpu()
-                # scores = torch.masked_select(scores, mask.reshape(-1, 100, 1).expand(-1, 100, 6) > 0)
+                scores = torch.masked_select(scores, mask.reshape(-1, 100, 1).expand(-1, 100, 6) > 0)
                 scores = scores.to(device)
 
                 scores = scores.view(-1, 4)
                 # Calculate loss.
 
                 labels = labels.cpu()
-                # labels = torch.masked_select(labels, all_input_mask > 0)
+                labels = torch.masked_select(labels, all_input_mask > 0)
                 labels = labels.to(device)
 
                 labels = labels.view(-1)
