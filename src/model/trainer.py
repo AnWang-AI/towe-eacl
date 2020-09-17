@@ -221,7 +221,7 @@ class Trainer():
             # Save train info to log file.
             self.save_log(info, self.args.train_log)
 
-            score_dict = score_BIO(pred.to_list(), y.to_list(), ignore_index=-1)
+            score_dict = score_BIO(pred.tolist(), y.tolist(), ignore_index=-1)
             BIO_info = 'BIO precision: {:.3f}, BIO recall: {:.3f}, BIO f1: {:.3f}'.format(score_dict["precsion"],
                                                                                           score_dict["recall"],
                                                                                           score_dict["f1"])
