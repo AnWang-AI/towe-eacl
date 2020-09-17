@@ -135,9 +135,9 @@ class Trainer():
         tprint(info)
         self.save_log(info, self.args.val_log)
 
-        score_dict = score_BIO(pred, y, ignore_index=-1)
-        BIO_info = 'BIO precision: {:.3f}, BIO recall: {:.3f}, BIO f1: {:.3f}'.format(score_dict["precsion"], score_dict["recall"], score_dict["f1"])
-        tprint(BIO_info)
+        # score_dict = score_BIO(pred, y, ignore_index=-1)
+        # BIO_info = 'BIO precision: {:.3f}, BIO recall: {:.3f}, BIO f1: {:.3f}'.format(score_dict["precsion"], score_dict["recall"], score_dict["f1"])
+        # tprint(BIO_info)
 
 
         print('-' * 40)
@@ -223,11 +223,11 @@ class Trainer():
             # Save train info to log file.
             self.save_log(info, self.args.train_log)
 
-            score_dict = score_BIO(pred, y, ignore_index=-1)
-            BIO_info = 'BIO precision: {:.3f}, BIO recall: {:.3f}, BIO f1: {:.3f}'.format(score_dict["precsion"],
-                                                                                          score_dict["recall"],
-                                                                                          score_dict["f1"])
-            tprint(BIO_info)
+            # score_dict = score_BIO(pred, y, ignore_index=-1)
+            # BIO_info = 'BIO precision: {:.3f}, BIO recall: {:.3f}, BIO f1: {:.3f}'.format(score_dict["precsion"],
+            #                                                                               score_dict["recall"],
+            #                                                                               score_dict["f1"])
+            # tprint(BIO_info)
 
             # Eval every {eval_frequency} train epoch
             if epoch_index % self.args.eval_frequency == 0:
