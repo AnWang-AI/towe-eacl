@@ -181,14 +181,14 @@ class Trainer():
 
                 scores = scores.cpu()
                 scores = torch.masked_select(scores, all_mask.reshape(-1, 100, 1).expand(-1, 100, 4)>0)
-                scores = scores.to(device)
+                scores = scores.cuda()
 
                 scores = scores.view(-1, 4)
                 # Calculate loss.
 
                 labels = labels.cpu()
                 labels = torch.masked_select(labels, all_mask>0)
-                labels = labels.to(device)
+                labels = labels.cuda()
 
                 labels = labels.view(-1)
                 batch_loss = self.criterion(scores, labels)
