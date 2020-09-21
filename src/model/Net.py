@@ -46,7 +46,7 @@ class ExtractionNet(torch.nn.Module):
             self.tag_embedding = torch.nn.Embedding(num_embeddings=50, embedding_dim=self.tag_emb_dim)
             self.feature_dim += self.tag_emb_dim
 
-        self.hidden_size = 128
+        self.hidden_size = 256
 
         self.graph_mode = graph_mode
 
