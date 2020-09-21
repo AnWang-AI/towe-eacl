@@ -47,7 +47,7 @@ class ARGCN_dep_distance_conv(MessagePassing):
         self.edge_trans1 = Param(torch.Tensor(self.dep_emb_dim, 1))
 
         self.distance_emb_dim = 50
-        self.distance_embedding = torch.nn.Embedding(num_embeddings=20, embedding_dim=self.distance_emb_dim)
+        self.distance_embedding = torch.nn.Embedding(num_embeddings=30, embedding_dim=self.distance_emb_dim)
         self.edge_trans2 = Param(torch.Tensor(self.distance_emb_dim, 1))
 
         self.att_weight = Param(torch.Tensor(out_channels*2 + self.distance_emb_dim, 2))
