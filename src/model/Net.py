@@ -39,7 +39,8 @@ class ExtractionNet(torch.nn.Module):
                 self.word_embed = nn.Embedding(vocab_size, word_embed_dim)
 
             else:
-                self.embedding_model = BertModel.from_pretrained("models/bert-base-uncased")
+                bert_path = "models/bert-base-uncased"
+                self.embedding_model = BertModel.from_pretrained("bert-base-uncased")
 
             self.feature_dim += self.word_embed_dim
 

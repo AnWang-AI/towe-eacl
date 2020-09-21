@@ -34,7 +34,8 @@ class Processer():
 
             self.w2v_path = "./data/full_glove.txt"
         else:
-            self.pretrained_bert_path = "models/bert-base-uncased"
+            # self.pretrained_bert_path = "models/bert-base-uncased"
+            self.pretrained_bert_path = "bert-base-uncased"
 
         self.tag2id = {'B': 1, 'I': 2, 'O': 0}
 
