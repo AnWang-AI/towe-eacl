@@ -64,7 +64,7 @@ class ExtractionNet(torch.nn.Module):
             # self.SubNet = BiLSTMNet(num_features=self.hidden_size, num_classes=output_size,
             #                          hidden_size=self.hidden_size)
 
-            self.MainNet = DeepARGCNNet(num_features=feature_dim, num_classes=output_size)
+            self.MainNet = DeepARGCNNet(num_features=self.feature_dim, num_classes=output_size)
 
         else:
             self.MainNet = BiLSTMNet(num_features=self.feature_dim, num_classes=output_size,
