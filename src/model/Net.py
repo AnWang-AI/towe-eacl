@@ -223,7 +223,7 @@ class DeepARGCNNet(torch.nn.Module):
         self.norm_layer_list = torch.nn.ModuleList()
         self.conv_layer_list = torch.nn.ModuleList()
 
-        conv_layer = ARGCN_dep_distance_conv_ver2
+        conv_layer = ARGCN_dep_distance_conv
         self.hidden_dim = 128
 
         # self.norm_layer_list.append(torch.nn.LayerNorm(num_features, eps=1e-05))
