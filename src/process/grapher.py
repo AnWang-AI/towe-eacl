@@ -80,13 +80,13 @@ class Grapher():
                     if [i, j] in dep_graph_edge_idx:
                         temp = dep_graph_edge_idx.index([i, j])
                         dep = dep_graph_edge_type[temp]
-                        if abs(distance) > 3:
-                            distance = 4 if distance > 0 else -4
-                    if abs(distance) <= 3 or dep != [0]:
+                        if abs(distance) > 10:
+                            distance = 11 if distance > 0 else -11
+                    if abs(distance) <= 10 or dep != [0]:
 
                         edge_idx.append([i, j])
                         edge_type.append(dep)
-                        edge_distace.append([distance+4])
+                        edge_distace.append([distance+11])
 
         return edge_idx, edge_type, edge_distace, word_tags
 
