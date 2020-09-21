@@ -15,7 +15,7 @@ from src.model.layers.ARGCN_dep_distance_conv import ARGCN_dep_distance_conv, AR
 from src.tools.utils import init_w2v_matrix
 
 class ExtractionNet(torch.nn.Module):
-    def __init__(self, word_embed_dim, output_size, word_emb_mode="w2v", graph_mode=False, have_tag=False, have_word_emb=False):
+    def __init__(self, word_embed_dim, output_size, word_emb_mode="w2v", graph_mode=False, have_tag=False, have_word_emb=True):
         super(ExtractionNet, self).__init__()
 
         self.word_embed_dim = word_embed_dim
