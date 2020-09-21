@@ -29,10 +29,10 @@ class Processer():
         assert word_emb_mode in ["w2v", "bert"]
         self.word_emb_mode = word_emb_mode
         if word_emb_mode == "w2v":
-            w2v_name = "word_embedding.txt"
-            self.w2v_path = os.path.join(data_path, w2v_name)
+            # w2v_name = "word_embedding.txt"
+            # self.w2v_path = os.path.join(data_path, w2v_name)
 
-            # self.w2v_path = "./data/full_glove.txt"
+            self.w2v_path = "./data/full_glove.txt"
         else:
             self.pretrained_bert_path = "models/bert-base-uncased"
 
