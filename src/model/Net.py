@@ -15,7 +15,7 @@ from src.model.layers.ARGCN_dep_distance_conv import ARGCN_dep_distance_conv
 from src.tools.utils import init_w2v_matrix
 
 class ExtractionNet(torch.nn.Module):
-    def __init__(self, word_embed_dim, output_size, word_emb_mode="w2v", graph_mode=False, have_tag=False, have_word_emb=False):
+    def __init__(self, word_embed_dim, output_size, word_emb_mode="w2v", graph_mode=False, have_tag=False, have_word_emb=True):
         super(ExtractionNet, self).__init__()
 
         self.word_embed_dim = word_embed_dim
@@ -60,7 +60,7 @@ class ExtractionNet(torch.nn.Module):
 
         if graph_mode==True:
 
-            self.MainNet = DeepEdgeNet(num_features=self.feature_dim, num_classes=self.hidden_size)
+            self.MainNet = EdgeNet(num_features=self.feature_dim, num_classes=self.hidden_size)
             self.SubNet = BiLSTMNet(num_features=self.hidden_size, num_classes=output_size,
                                      hidden_size=self.hidden_size)
 
