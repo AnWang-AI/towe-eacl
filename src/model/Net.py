@@ -250,15 +250,17 @@ class DeepARGCNNet(torch.nn.Module):
             x = self.conv_layer_list[i+1](x, edge_index, edge_rep, edge_distance) + x
 
         x = self.norm_layer_list[-1](x)
-        # x = F.leaky_relu(x, 0.1)
+        x = F.leaky_relu(x, 0.1)
         # x = F.dropout(x, p=0.4)
-        x = F.elu(x)
-        x = self.conv_layer_list[-1](x, edge_index, edge_rep, edge_distance)
-        # x = F.leaky_relu(x, 0.1)
-        # x = F.dropout(x, p=0.4)
+        # x = F.elu(x)
+
+        x = self.conv_layer_list[-1](x, edge_index, edge_rep, edge_distance)+x
+
+        x = F.leaky_relu(x, 0.1)
+        x = F.dropout(x, p=0.4)
 
         # x = F.elu(x)
 
-        x = F.log_softmax(x, dim=1)
+        # x = F.log_softmax(x, dim=1)
 
         return x
