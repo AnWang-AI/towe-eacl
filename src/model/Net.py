@@ -10,7 +10,7 @@ from torch_geometric.data import Data
 from transformers import BertModel
 
 from src.model.layers.ARGCN_dep_conv import ARGCN_dep_conv
-from src.model.layers.ARGCN_dep_distance_conv import ARGCN_dep_distance_conv
+from src.model.layers.ARGCN_dep_distance_conv import ARGCN_dep_distance_conv, ARGCN_dep_distance_conv_ver2
 
 from src.tools.utils import init_w2v_matrix
 
@@ -223,7 +223,7 @@ class DeepARGCNNet(torch.nn.Module):
         self.norm_layer_list = torch.nn.ModuleList()
         self.conv_layer_list = torch.nn.ModuleList()
 
-        conv_layer = ARGCN_dep_distance_conv
+        conv_layer = ARGCN_dep_distance_conv_ver2
         self.hidden_dim = 128
 
         # self.norm_layer_list.append(torch.nn.LayerNorm(num_features, eps=1e-05))
