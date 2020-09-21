@@ -24,7 +24,10 @@ class ExtractionNet(torch.nn.Module):
         self.word_emb_mode = word_emb_mode
         assert word_emb_mode in ["w2v", "bert"]
         if word_emb_mode == "w2v":
-            w2v_path = "./data/full_glove.txt"
+
+            w2v_path = "./data/14res/word_embedding.txt"
+            # w2v_path = "./data/full_glove.txt"
+
             self.w2v_matrix, self.vocab_id_map, self.id_vocab_map = init_w2v_matrix(w2v_path)
             self.w2v_matrix = torch.from_numpy(np.float32(self.w2v_matrix))
             vocab_size = 7000
