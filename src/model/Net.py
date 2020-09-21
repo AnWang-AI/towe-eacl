@@ -60,7 +60,7 @@ class ExtractionNet(torch.nn.Module):
 
         if graph_mode==True:
 
-            self.MainNet = RGCNNet(num_features=self.feature_dim, num_classes=self.hidden_size)
+            self.MainNet = ARGCNNet(num_features=self.feature_dim, num_classes=self.hidden_size)
             self.SubNet = BiLSTMNet(num_features=self.hidden_size, num_classes=output_size,
                                      hidden_size=self.hidden_size)
 
@@ -156,10 +156,10 @@ class BiLSTMNet(torch.nn.Module):
 
         return x
 
-class EdgeNet(torch.nn.Module):
+class ARGCNNet(torch.nn.Module):
 
     def __init__(self, num_features=768, num_classes=9, edge_feature_dim=100):
-        super(EdgeNet, self).__init__()
+        super(ARGCNNet, self).__init__()
 
         self.num_features = num_features
 
@@ -213,9 +213,9 @@ class RGCNNet(torch.nn.Module):
         return x
 
 
-class DeepEdgeNet(torch.nn.Module):
+class DeepARGCNNet(torch.nn.Module):
     def __init__(self, num_features=768, num_classes=9, edge_feature_dim=2, num_mid_layers=3):
-        super(DeepEdgeNet, self).__init__()
+        super(DeepARGCNNet, self).__init__()
 
         self.num_features = num_features
         self.num_mid_layers = num_mid_layers
