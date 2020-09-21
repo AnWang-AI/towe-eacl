@@ -15,7 +15,7 @@ from src.model.layers.ARGCN_dep_distance_conv import ARGCN_dep_distance_conv
 from src.tools.utils import init_w2v_matrix
 
 class ExtractionNet(torch.nn.Module):
-    def __init__(self, word_embed_dim, output_size, word_emb_mode="w2v", graph_mode=False, have_tag=False, have_word_emb=True):
+    def __init__(self, word_embed_dim, output_size, word_emb_mode="w2v", graph_mode=False, have_tag=False, have_word_emb=False):
         super(ExtractionNet, self).__init__()
 
         self.word_embed_dim = word_embed_dim
@@ -57,7 +57,6 @@ class ExtractionNet(torch.nn.Module):
         self.hidden_size = 128
 
         self.graph_mode = graph_mode
-
 
         if graph_mode==True:
 
@@ -183,6 +182,34 @@ class EdgeNet(torch.nn.Module):
         x = F.relu(x)
 
         return x
+
+
+class RGCNNet(torch.nn.Module):
+
+    def __init__(self, num_features=768, num_classes=9, edge_feature_dim=100):
+        super(RGCNNet, self).__init__()
+
+        self.num_features = num_features
+
+        self.hidden_dim = 256
+
+        conv_layer = RGCNConv
+
+        self.conv1 = conv_layer(num_features, self.hidden_dim, edge_feature_dim=edge_feature_dim)
+
+        self.conv2 = conv_layer(self.hidden_dim, num_classes, edge_feature_dim=edge_feature_dim)
+
+    def forward(self, x, edge_index, edge_type, edge_distance):
+        x = self.conv1(x, edge_index, edge_type)
+        x = F.dropout(x, p=0.4)
+        x = F.relu(x)
+
+        x = self.conv2(x, edge_index, edge_type)
+        x = F.dropout(x, p=0.4)
+        x = F.relu(x)
+
+        return x
+
 
 class DeepEdgeNet(torch.nn.Module):
     def __init__(self, num_features=768, num_classes=9, edge_feature_dim=2, num_mid_layers=3):
