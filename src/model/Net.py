@@ -60,7 +60,7 @@ class ExtractionNet(torch.nn.Module):
 
         if graph_mode==True:
 
-            self.MainNet = EdgeNet(num_features=self.feature_dim, num_classes=self.hidden_size)
+            self.MainNet = RGCNNet(num_features=self.feature_dim, num_classes=self.hidden_size)
             self.SubNet = BiLSTMNet(num_features=self.hidden_size, num_classes=output_size,
                                      hidden_size=self.hidden_size)
 
