@@ -135,7 +135,7 @@ class BiLSTMNet(torch.nn.Module):
 
         super(BiLSTMNet, self).__init__()
 
-        self.BiLSTM = torch.nn.LSTM(num_features, hidden_size, bidirectional=True, batch_first=True)
+        self.BiLSTM = torch.nn.LSTM(num_features, hidden_size, num_layers=2, bidirectional=True, batch_first=True)
         self.lin = torch.nn.Linear(hidden_size * 2, num_classes)
 
         self.init_weight()
