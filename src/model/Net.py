@@ -200,6 +200,8 @@ class RGCNNet(torch.nn.Module):
         self.conv2 = conv_layer(self.hidden_dim, num_classes, num_relations=50, num_bases=1)
 
     def forward(self, x, edge_index, edge_type, edge_distance):
+        print(edge_type)
+        print(edge_type.shape)
         x = self.conv1(x, edge_index, edge_type)
         x = F.dropout(x, p=0.4)
         x = F.relu(x)
