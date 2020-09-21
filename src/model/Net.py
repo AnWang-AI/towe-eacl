@@ -195,9 +195,9 @@ class RGCNNet(torch.nn.Module):
 
         conv_layer = RGCNConv
 
-        self.conv1 = conv_layer(num_features, self.hidden_dim, edge_feature_dim=edge_feature_dim)
+        self.conv1 = conv_layer(num_features, self.hidden_dim, num_relations=50, num_bases=1)
 
-        self.conv2 = conv_layer(self.hidden_dim, num_classes, edge_feature_dim=edge_feature_dim)
+        self.conv2 = conv_layer(self.hidden_dim, num_classes, num_relations=50, num_bases=1)
 
     def forward(self, x, edge_index, edge_type, edge_distance):
         x = self.conv1(x, edge_index, edge_type)
