@@ -122,8 +122,9 @@ class ExtractionNet(torch.nn.Module):
             edge_distance = batch.edge_distance
 
             x = self.MainNet(x, edge_idx, edge_type, edge_distance)
+            x = x.reshape(-1, 100, self.hidden_size)
             x = torch.cat([x, word_embedding], dim=-1)
-            x = x.reshape(-1, 100, self.LSTM_input_dim)
+
             x = self.SubNet(x)
         else:
             # x shape: [batch size, time step, embed dim]
