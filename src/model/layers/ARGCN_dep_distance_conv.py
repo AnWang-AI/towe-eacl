@@ -67,7 +67,7 @@ class ARGCN_dep_distance_conv(MessagePassing):
 
         self.distance_emb_dim = 50
 
-        self.distance_embedding = PositionalEmbedding(embedding_dim=self.distance_emb_dim)
+        self.distance_embedding = PositionalEmbedding(demb=self.distance_emb_dim)
         # self.distance_embedding = torch.nn.Embedding(num_embeddings=30, embedding_dim=self.distance_emb_dim)
 
         self.edge_trans2 = Param(torch.Tensor(self.distance_emb_dim, 1))
