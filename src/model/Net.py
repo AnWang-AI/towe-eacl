@@ -43,7 +43,6 @@ class ExtractionNet(torch.nn.Module):
 
             self.feature_dim += self.word_embed_dim
 
-
         self.target_emb_dim = 100
         self.target_embedding = torch.nn.Embedding(num_embeddings=output_size, embedding_dim=self.target_emb_dim)
         self.feature_dim += self.target_emb_dim
@@ -76,7 +75,7 @@ class ExtractionNet(torch.nn.Module):
         if self.have_word_emb:
             if self.word_emb_mode == "w2v":
                 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-                self.word_embed.weight = torch.nn.Parameter(self.w2v_matrix.to(device), requires_grad=False)
+                self.word_embed.weight = torch.nn.Parameter(self.w2v_matrix.to(device), requires_grad=True)
 
         # self.tag_embedding.weight = torch.nn.Parameter(torch.eye(4), requires_grad=True)
         torch.nn.init.xavier_normal_(self.target_embedding.weight)
