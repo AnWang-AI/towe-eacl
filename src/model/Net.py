@@ -60,7 +60,9 @@ class ExtractionNet(torch.nn.Module):
         if graph_mode==True:
 
             self.MainNet = DeepARGCNNet(num_features=self.feature_dim, num_classes=self.hidden_size)
-            self.SubNet = BiLSTMNet(num_features=self.hidden_size, num_classes=output_size,
+
+            self.LSTM_input_dim = self.hidden_size + self.word_embed_dim
+            self.SubNet = BiLSTMNet(num_features=self.LSTM_input_dim, num_classes=output_size,
                                      hidden_size=self.hidden_size)
 
             # self.MainNet = DeepARGCNNet(num_features=self.feature_dim, num_classes=output_size)
@@ -92,18 +94,18 @@ class ExtractionNet(torch.nn.Module):
 
         if self.have_word_emb:
             if self.word_emb_mode == "w2v":
-                x = self.word_embed(x)
-                x = x.reshape(-1, 100, self.word_embed_dim)
+                word_embedding = self.word_embed(x)
+                word_embedding = word_embedding.reshape(-1, 100, self.word_embed_dim)
             else:
                 x = x.reshape(-1, 100)
                 # bert_model_input_size: [batch size, time step]
                 if trian_bert:
-                    x = self.embedding_model(x)[0]
+                    word_embedding = self.embedding_model(x)[0]
                 else:
                     with torch.no_grad():
-                        x = self.embedding_model(x)[0]
+                        word_embedding = self.embedding_model(x)[0]
 
-            x = torch.cat([x, target_embedding], dim=-1)
+            x = torch.cat([word_embedding, target_embedding], dim=-1)
         else:
             x = target_embedding
 
@@ -120,7 +122,8 @@ class ExtractionNet(torch.nn.Module):
             edge_distance = batch.edge_distance
 
             x = self.MainNet(x, edge_idx, edge_type, edge_distance)
-            x = x.reshape(-1, 100, self.hidden_size)
+            x = torch.cat([x, word_embedding], dim=-1)
+            x = x.reshape(-1, 100, self.LSTM_input_dim)
             x = self.SubNet(x)
         else:
             # x shape: [batch size, time step, embed dim]
@@ -254,7 +257,7 @@ class DeepARGCNNet(torch.nn.Module):
         # x = F.dropout(x, p=0.4)
         # x = F.elu(x)
 
-        x = self.conv_layer_list[-1](x, edge_index, edge_rep, edge_distance) + x
+        x = self.conv_layer_list[-1](x, edge_index, edge_rep, edge_distance)
 
         x = F.leaky_relu(x, 0.1)
 
