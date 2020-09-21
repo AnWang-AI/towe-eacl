@@ -98,26 +98,101 @@ def score_BIO(predicted, golden, ignore_index=-1):
         for j in range(length):
             if golden[i][j] == ignore_index:
                 break
-            if golden[i][j] == 2:
+            if golden[i][j] == 1:
                 if len(golden_seq) > 0:  # 00
                     golden_items.append(golden_seq)
                     golden_seq = []
                 golden_seq.append(j)
-            elif golden[i][j] == 3:
+            elif golden[i][j] == 2:
                 if len(golden_seq) > 0:
                     golden_seq.append(j)
-            elif golden[i][j] == 1:
+            elif golden[i][j] == 0:
                 if len(golden_seq) > 0:
                     golden_items.append(golden_seq)
                     golden_seq = []
-            if predicted[i][j] == 2:
+            if predicted[i][j] == 1:
                 if len(predict_seq) > 0:  # 00
                     predict_items.append(predict_seq)
                     predict_seq = []
                 predict_seq.append(j)
-            elif predicted[i][j] == 3:
+            elif predicted[i][j] == 2:
                 if len(predict_seq) > 0:
                     predict_seq.append(j)
+            elif predicted[i][j] == 0:
+                if len(predict_seq) > 0:
+                    predict_items.append(predict_seq)
+                    predict_seq = []
+        if len(golden_seq) > 0:
+            golden_items.append(golden_seq)
+        if len(predict_seq) > 0:
+            predict_items.append(predict_seq)
+        golden_01 = len(golden_items)
+        predict_01 = len(predict_items)
+        correct_01 = sum([item in golden_items for item in predict_items])
+        # print(correct_01)
+        # print([item in golden_items for item in predict_items])
+        # print(golden_items)
+        # print(predict_items)
+
+        golden_01_count += golden_01
+        predict_01_count += predict_01
+        correct_01_count += correct_01
+    precision = correct_01_count / predict_01_count if predict_01_count > 0 else 0
+    recall = correct_01_count / golden_01_count if golden_01_count > 0 else 0
+    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0
+    score_dict = {'precision': precision, 'recall': recall, 'f1': f1}
+    return score_dict
+
+def score_BIO_version_2(predicted, golden, ignore_index=-1):
+    # O:1, B:2, I:3
+    # print(predicted)
+    assert len(predicted) == len(golden)
+    sum_all = 0
+    sum_correct = 0
+    golden_01_count = 0
+    predict_01_count = 0
+    correct_01_count = 0
+    # print(predicted)
+    # print(golden)
+    for i in range(len(golden)):
+        length = len(golden[i])
+        # print(length)
+        # print(predicted[i])
+        # print(golden[i])
+        golden_01 = 0
+        correct_01 = 0
+        predict_01 = 0
+        predict_items = []
+        golden_items = []
+        golden_seq = []
+        predict_seq = []
+        for j in range(length):
+            if golden[i][j] == ignore_index:
+                break
+            if golden[i][j] == 2:
+                if j == 0 or golden[i][j-1] == 2:
+                    if len(golden_seq) > 0:  # 00
+                        golden_items.append(golden_seq)
+                        golden_seq = []
+                    golden_seq.append(j)
+                else:
+                    if len(golden_seq) > 0:
+                        golden_seq.append(j)
+            elif golden[i][j] == 1:
+                if len(golden_seq) > 0:
+                    golden_items.append(golden_seq)
+                    golden_seq = []
+
+            if predicted[i][j] == 2:
+                if j == 0 or predicted[i][j-1] == 2:
+                    if len(predict_seq) > 0:  # 00
+                        predict_items.append(predict_seq)
+                        predict_seq = []
+                    predict_seq.append(j)
+                else:
+                    if len(predict_seq) > 0:
+                        predict_seq.append(j)
+
             elif predicted[i][j] == 1:
                 if len(predict_seq) > 0:
                     predict_items.append(predict_seq)

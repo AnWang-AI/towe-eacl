@@ -15,6 +15,7 @@ from torch_geometric.nn import GATConv
 from src.process.processer import Processer
 from src.process.Dataset import TOWEDataset, TOWEDataset_with_bert, TOWEDataset_with_graph, TOWEDataset_with_graph_with_bert
 from src.model.Net import ExtractionNet
+from src.model.LSTM_CRF import BiLSTM_CRF
 
 from src.tools.utils import MultiFocalLoss, tprint
 from src.tools.TOWE_utils import score_BIO
@@ -77,10 +78,9 @@ def load_data(data_path, train_batch_size=1, val_batch_size=1, use_bert=False, b
 
 class Trainer():
 
-    def __init__(self, loader, model, criterion, optimizer, args):
+    def __init__(self, loader, model, optimizer, args):
         self.train_loader, self.val_loader, self.test_loader = loader['train'], loader['valid'], loader['test']
         self.model = model.to(device)
-        self.criterion = criterion.to(device)
         self.optimizer = optimizer
         self.cuda = True if torch.cuda.is_available() and args.cuda else False
         self.args = args
@@ -199,12 +199,12 @@ class Trainer():
                     trian_bert = True
                 else:
                     trian_bert = False
-            else:   ## 不适用bert的时候
-                start_to_train_word_emb = 15
-                if i > start_to_train_word_emb:
-                    for param_group in self.optimizer.param_groups:
-                        param_group['lr'] = 5e-5
-                    self.model.word_embed.weight.requires_grad = True
+            # else:   ## 不适用bert的是偶
+            #     start_to_train_word_emb = 15
+            #     if i > start_to_train_word_emb:
+            #         for param_group in self.optimizer.param_groups:
+            #             param_group['lr'] = 5e-5
+            #         self.model.word_embed.weight.requires_grad = True
 
 
             total_loss = 0.0
@@ -225,9 +225,8 @@ class Trainer():
                 labels = all_opinion
 
                 # Forward pass.
-
-                scores = self.model(datas, trian_bert)
-
+                scores, _ = self.model(all_input_ids)
+                batch_loss = self.model.neg_log_likelihood(all_input_ids, all_opinion)
 
                 scores = scores.cpu()
                 scores = torch.masked_select(scores.reshape(-1, 100, num_class), all_mask.reshape(-1, 100, 1).expand(-1, 100, num_class)>0)
@@ -244,8 +243,6 @@ class Trainer():
 
                 # print(scores.shape)
                 # print(labels.shape)
-
-                batch_loss = self.criterion(scores, labels)
 
                 # zero the parameter gradients
                 self.optimizer.zero_grad()
@@ -388,26 +385,12 @@ if __name__ == "__main__":
 
     loader = load_data(args.data_path, args.train_batch_size, args.val_batch_size, args.use_bert, args.build_graph)
 
-    assert args.model in ["Target_BiLSTM_with_bert", "Tag_BiLSTM", "ExtractionNet"]
-    model_list = {"Target_BiLSTM_with_bert": ExtractionNet,
-                  "Tag_BiLSTM": ExtractionNet,
-                  "ExtractionNet": ExtractionNet}
-    if args.use_bert:
-        model = model_list[args.model](word_embed_dim=768, output_size=num_class, word_emb_mode="bert", graph_mode=args.build_graph)
-    else:
-        model = model_list[args.model](word_embed_dim=300, output_size=num_class, word_emb_mode="w2v", graph_mode=args.build_graph)
+    model = BiLSTM_CRF(embedding_dim=300)
 
     print(model)
 
-    assert args.loss in ["CrossEntropy", "FacalLoss"]
-    if args.loss == "CrossEntropy":
-        # loss_op = torch.nn.CrossEntropyLoss()
-        loss_op = torch.nn.NLLLoss()
-    else:
-        loss_op = MultiFocalLoss(num_class=num_class, gamma=2)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-5)
-
-    trainer = Trainer(loader, model, loss_op, optimizer, args)
+    trainer = Trainer(loader, model, optimizer, args)
     trainer.load_model()
     trainer.train()

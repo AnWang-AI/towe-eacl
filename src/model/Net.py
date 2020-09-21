@@ -7,48 +7,216 @@ import numpy as np
 from torch_geometric.nn import GCNConv, GraphConv, GATConv, GatedGraphConv, RGCNConv
 from torch_geometric.data import Data
 
-class Tag_BiLSTM(torch.nn.Module):
-    def __init__(self, word_embed_dim, output_size, vocab_size):
-        super(Tag_BiLSTM, self).__init__()
+from transformers import BertModel
+
+from src.model.layers.ARGCN_dep_conv import ARGCN_dep_conv
+from src.model.layers.ARGCN_dep_distance_conv import ARGCN_dep_distance_conv
+
+from src.tools.utils import init_w2v_matrix
+
+class ExtractionNet(torch.nn.Module):
+    def __init__(self, word_embed_dim, output_size, word_emb_mode="w2v", graph_mode=False, have_tag=True):
+        super(ExtractionNet, self).__init__()
 
         self.word_embed_dim = word_embed_dim
         self.output_size = output_size
 
-        self.hidden_size = 256
+        self.word_emb_mode = word_emb_mode
+        assert word_emb_mode in ["w2v", "bert"]
+        if word_emb_mode == "w2v":
+            w2v_path = "./data/full_glove.txt"
+            self.w2v_matrix, self.vocab_id_map, self.id_vocab_map = init_w2v_matrix(w2v_path)
+            self.w2v_matrix = torch.from_numpy(np.float32(self.w2v_matrix))
+            vocab_size = 7000
+            self.word_embed = nn.Embedding(vocab_size, word_embed_dim)
 
-        self.word_embed = nn.Embedding(vocab_size, word_embed_dim)
-        self.tag_embedding = torch.nn.Embedding(num_embeddings=4, embedding_dim=4)
+        else:
+            self.embedding_model = BertModel.from_pretrained("models/bert-base-uncased")
 
-        self.BiLSTM = torch.nn.LSTM(self.word_embed_dim + 4, self.hidden_size, num_layers=1, bidirectional=True, batch_first=True)
+        self.target_emb_dim = 100
+        self.target_embedding = torch.nn.Embedding(num_embeddings=output_size, embedding_dim=self.target_emb_dim)
+        self.feature_dim = self.target_emb_dim + self.word_embed_dim
 
-        self.fc_sentence = torch.nn.Linear(self.hidden_size * 2, self.output_size)
+        self.have_tag = have_tag
+        if have_tag:
+            self.tag_emb_dim = 100
+            self.tag_embedding = torch.nn.Embedding(num_embeddings=50, embedding_dim=self.tag_emb_dim)
+            self.feature_dim += self.tag_emb_dim
+
+        self.hidden_size = 128
+
+        self.graph_mode = graph_mode
+
+
+        if graph_mode==True:
+
+            self.MainNet = EdgeNet(num_features=self.feature_dim, num_classes=self.hidden_size)
+            self.SubNet = BiLSTMNet(num_features=self.hidden_size, num_classes=output_size,
+                                     hidden_size=self.hidden_size)
+
+            # self.MainNet = DeepEdgeNet(num_features=feature_dim, num_classes=output_size)
+
+        else:
+            self.MainNet = BiLSTMNet(num_features=self.feature_dim, num_classes=output_size,
+                                     hidden_size=self.hidden_size)
 
         self.init_weight()
 
     def init_weight(self):
+        if self.word_emb_mode == "w2v":
+            device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+            self.word_embed.weight = torch.nn.Parameter(self.w2v_matrix.to(device), requires_grad=False)
+        # self.tag_embedding.weight = torch.nn.Parameter(torch.eye(4), requires_grad=True)
+        torch.nn.init.xavier_normal_(self.target_embedding.weight)
+        if self.have_tag:
+            torch.nn.init.xavier_normal_(self.tag_embedding.weight)
 
-        self.tag_embedding.weight = torch.nn.Parameter(torch.eye(4), requires_grad=True)
 
+    def forward(self, batch, trian_bert=False):
+        x = batch.text_idx
+
+        if self.word_emb_mode == "w2v":
+            x = self.word_embed(x)
+            x = x.reshape(-1, 100, self.word_embed_dim)
+        else:
+            x = x.reshape(-1, 100)
+            # bert_model_input_size: [batch size, time step]
+            if trian_bert:
+                x = self.embedding_model(x)[0]
+            else:
+                with torch.no_grad():
+                    x = self.embedding_model(x)[0]
+
+        target_embedding = self.target_embedding(batch.target)
+        target_embedding = target_embedding.reshape(-1, 100, self.target_emb_dim)
+
+        x = torch.cat([x, target_embedding], dim=-1)
+
+        # x = target_embedding
+
+
+        if self.have_tag:
+            tag_embedding = self.tag_embedding(batch.tag)
+            tag_embedding = tag_embedding.reshape(-1, 100, self.tag_emb_dim)
+            x = torch.cat([x, tag_embedding], dim=-1)
+
+        if self.graph_mode:
+            x = x.reshape(-1, self.feature_dim)
+            # x = x.reshape(-1, self.word_embed_dim + self.target_emb_dim + self.tag_embed_dim)
+            edge_idx = batch.edge_index
+            edge_type = batch.edge_type
+            edge_distance = batch.edge_distance
+
+            x = self.MainNet(x, edge_idx, edge_type, edge_distance)
+            x = x.reshape(-1, 100, self.hidden_size)
+            x = self.SubNet(x)
+        else:
+            # x shape: [batch size, time step, embed dim]
+            x = self.MainNet(x)
+
+        output = F.log_softmax(x, dim=-1)
+
+        return output
+
+class BiLSTMNet(torch.nn.Module):
+    def __init__(self, num_features, num_classes, hidden_size):
+
+        super(BiLSTMNet, self).__init__()
+
+        self.BiLSTM = torch.nn.LSTM(num_features, hidden_size, bidirectional=True, batch_first=True)
+        self.lin = torch.nn.Linear(hidden_size * 2, num_classes)
+
+        self.init_weight()
+
+    def init_weight(self):
+        # lstm
         for weights in [self.BiLSTM.weight_hh_l0, self.BiLSTM.weight_ih_l0]:
             torch.nn.init.orthogonal_(weights)
 
         # linear
-        torch.nn.init.xavier_normal_(self.fc_sentence.weight)
+        torch.nn.init.xavier_normal_(self.lin.weight)
 
+    def forward(self, x):
 
-    def forward(self, batch):
-        target_embedding = self.tag_embedding(batch.target)
+        x, _ = self.BiLSTM(x)
+        x = self.lin(x)
 
-        x = batch.text_idx
-        x = self.word_embed(x)
+        return x
 
-        x = x.reshape(-1, 100, self.word_embed_dim)
-        target_embedding = target_embedding.reshape(-1, 100, 4)
+class EdgeNet(torch.nn.Module):
 
-        x = torch.cat([x, target_embedding], dim=-1)
-        # sentence: [batch size, time step, embed dim]
-        encoded, _ = self.BiLSTM(x)
+    def __init__(self, num_features=768, num_classes=9, edge_feature_dim=100):
+        super(EdgeNet, self).__init__()
 
-        output = self.fc_sentence(encoded)
+        self.num_features = num_features
 
-        return output
+        self.hidden_dim = 256
+
+        conv_layer = ARGCN_dep_distance_conv
+
+        self.conv1 = conv_layer(num_features, self.hidden_dim, edge_feature_dim=edge_feature_dim)
+
+        self.conv2 = conv_layer(self.hidden_dim, num_classes, edge_feature_dim=edge_feature_dim)
+
+    def forward(self, x, edge_index, edge_type, edge_distance):
+
+        x = self.conv1(x, edge_index, edge_type, edge_distance)
+        x = F.dropout(x, p=0.4)
+        x = F.relu(x)
+
+        x = self.conv2(x, edge_index, edge_type, edge_distance)
+        x = F.dropout(x, p=0.4)
+        x = F.relu(x)
+
+        return x
+
+class DeepEdgeNet(torch.nn.Module):
+    def __init__(self, num_features=768, num_classes=9, edge_feature_dim=2, num_mid_layers=3):
+        super(DeepEdgeNet, self).__init__()
+
+        self.num_features = num_features
+        self.num_mid_layers = num_mid_layers
+
+        self.norm_layer_list = torch.nn.ModuleList()
+        self.conv_layer_list = torch.nn.ModuleList()
+
+        conv_layer = ARGCN_dep_distance_conv
+        self.hidden_dim = 128
+
+        # self.norm_layer_list.append(torch.nn.LayerNorm(num_features, eps=1e-05))
+
+        self.norm_layer_list.append(torch.nn.BatchNorm1d(num_features, eps=1e-05, momentum=0.1, affine=True))
+        self.conv_layer_list.append(conv_layer(num_features, self.hidden_dim, edge_feature_dim=edge_feature_dim))
+
+        for i in range(self.num_mid_layers):
+            # self.norm_layer_list.append(torch.nn.LayerNorm(self.hidden_dim, eps=1e-05))
+            self.norm_layer_list.append(torch.nn.BatchNorm1d(self.hidden_dim, eps=1e-05, momentum=0.1, affine=True))
+            self.conv_layer_list.append(conv_layer(self.hidden_dim, self.hidden_dim, edge_feature_dim=edge_feature_dim))
+
+        self.norm_layer_list.append(torch.nn.BatchNorm1d(self.hidden_dim, eps=1e-05, momentum=0.1, affine=True))
+        self.conv_layer_list.append(conv_layer(self.hidden_dim, num_classes, edge_feature_dim=edge_feature_dim))
+
+    def forward(self, x, edge_index, edge_rep, edge_distance):
+
+        x = self.conv_layer_list[0](x, edge_index, edge_rep, edge_distance)
+
+        for i in range(self.num_mid_layers):
+            x = self.norm_layer_list[i+1](x)
+            x = F.leaky_relu(x, 0.1)
+            # x = F.dropout(x, p=0.4)
+            # x = F.relu(x)
+            x = self.conv_layer_list[i+1](x, edge_index, edge_rep, edge_distance) + x
+
+        x = self.norm_layer_list[-1](x)
+        # x = F.leaky_relu(x, 0.1)
+        # x = F.dropout(x, p=0.4)
+        x = F.elu(x)
+        x = self.conv_layer_list[-1](x, edge_index, edge_rep, edge_distance)
+        x = F.leaky_relu(x, 0.1)
+        x = F.dropout(x, p=0.4)
+
+        # x = F.elu(x)
+
+        # x = F.log_softmax(x, dim=1)
+
+        return x
