@@ -125,7 +125,7 @@ class ARGCN_dep_distance_conv(MessagePassing):
         # alpha = F.leaky_relu(alpha, self.negative_slope)
         alpha = alpha.reshape(-1, self.dep_emb_dim)
 
-        edge_distance = edge_distance.reshape(-1)
+        edge_distance = edge_distance.reshape(-1).float()
         gamma = self.distance_embedding(edge_distance)
         # gamma = torch.matmul(gamma, self.edge_trans2)
         # gamma = F.leaky_relu(gamma, self.negative_slope)
