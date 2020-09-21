@@ -35,9 +35,9 @@ CUDA_VISIBLE_DEVICES=2 python src/model/trainer.py \
 --cuda
 
 # bert graph LSTM
-CUDA_VISIBLE_DEVICES=2 python src/model/trainer.py \
+CUDA_VISIBLE_DEVICES=1 python src/model/trainer.py \
 --data_path ./data/14res \
---save_model_name models/Model_ExtractionNet_with_bert_with_graph.ckpt \
+--save_model_name models/Model_ExtractionNet_with_bert_with_graph.ckpt_3 \
 --use_bert \
 --build_graph \
 --model Target_BiLSTM_with_bert \
