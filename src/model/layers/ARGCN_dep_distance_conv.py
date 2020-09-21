@@ -1,4 +1,5 @@
 import torch
+from torch import nn
 from torch.nn import Parameter as Param
 from torch_geometric.nn.conv import MessagePassing
 
@@ -16,6 +17,24 @@ def glorot(tensor):
     if tensor is not None:
         stdv = math.sqrt(6.0 / (tensor.size(-2) + tensor.size(-1)))
         tensor.data.uniform_(-stdv, stdv)
+
+class PositionalEmbedding(nn.Module):
+    def __init__(self, demb):
+        super(PositionalEmbedding, self).__init__()
+
+        self.demb = demb
+
+        inv_freq = 1 / (10000 ** (torch.arange(0.0, demb, 2.0) / demb))
+        self.register_buffer('inv_freq', inv_freq)
+
+    def forward(self, pos_seq, bsz=None):
+        sinusoid_inp = torch.ger(pos_seq, self.inv_freq)
+        pos_emb = torch.cat([sinusoid_inp.sin(), sinusoid_inp.cos()], dim=-1)
+
+        if bsz is not None:
+            return pos_emb[:,None,:].expand(-1, bsz, -1)
+        else:
+            return pos_emb[:,None,:]
 
 class ARGCN_dep_distance_conv(MessagePassing):
     """
@@ -47,7 +66,10 @@ class ARGCN_dep_distance_conv(MessagePassing):
         self.edge_trans1 = Param(torch.Tensor(self.dep_emb_dim, 1))
 
         self.distance_emb_dim = 50
-        self.distance_embedding = torch.nn.Embedding(num_embeddings=30, embedding_dim=self.distance_emb_dim)
+
+        self.distance_embedding = PositionalEmbedding(embedding_dim=self.distance_emb_dim)
+        # self.distance_embedding = torch.nn.Embedding(num_embeddings=30, embedding_dim=self.distance_emb_dim)
+
         self.edge_trans2 = Param(torch.Tensor(self.distance_emb_dim, 1))
 
         self.att_weight = Param(torch.Tensor(out_channels*2 + self.distance_emb_dim, 2))
@@ -88,7 +110,7 @@ class ARGCN_dep_distance_conv(MessagePassing):
 
         torch.nn.init.xavier_normal_(self.dep_embedding.weight)
 
-        torch.nn.init.xavier_normal_(self.distance_embedding.weight)
+        # torch.nn.init.xavier_normal_(self.distance_embedding.weight)
 
 
     def forward(self, x, edge_index, edge_type, edge_distance, edge_norm=None, size=None):
