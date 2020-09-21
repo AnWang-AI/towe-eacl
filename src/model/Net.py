@@ -15,7 +15,7 @@ from src.model.layers.ARGCN_dep_distance_conv import ARGCN_dep_distance_conv
 from src.tools.utils import init_w2v_matrix
 
 class ExtractionNet(torch.nn.Module):
-    def __init__(self, word_embed_dim, output_size, word_emb_mode="w2v", graph_mode=False, have_tag=False, have_word_emb=True):
+    def __init__(self, word_embed_dim, output_size, word_emb_mode="w2v", graph_mode=False, have_tag=False, have_word_emb=False):
         super(ExtractionNet, self).__init__()
 
         self.word_embed_dim = word_embed_dim
@@ -76,7 +76,7 @@ class ExtractionNet(torch.nn.Module):
         if self.have_word_emb:
             if self.word_emb_mode == "w2v":
                 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-                self.word_embed.weight = torch.nn.Parameter(self.w2v_matrix.to(device), requires_grad=True)
+                self.word_embed.weight = torch.nn.Parameter(self.w2v_matrix.to(device), requires_grad=False)
 
         # self.tag_embedding.weight = torch.nn.Parameter(torch.eye(4), requires_grad=True)
         torch.nn.init.xavier_normal_(self.target_embedding.weight)

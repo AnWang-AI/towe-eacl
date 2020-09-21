@@ -24,9 +24,9 @@ CUDA_VISIBLE_DEVICES=1 python src/model/trainer.py \
 --cuda
 
 # graph + LSTM
-CUDA_VISIBLE_DEVICES=0 python src/model/trainer.py \
+CUDA_VISIBLE_DEVICES=2 python src/model/trainer.py \
 --data_path ./data/14res \
---save_model_name models/Model_ExtractionNet_with_graph.ckpt \
+--save_model_name models/Model_ExtractionNet_with_graph_RGCN.ckpt \
 --build_graph \
 --model ExtractionNet \
 --loss CrossEntropy \
