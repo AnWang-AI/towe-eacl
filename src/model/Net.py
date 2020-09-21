@@ -60,11 +60,11 @@ class ExtractionNet(torch.nn.Module):
 
         if graph_mode==True:
 
-            self.MainNet = ARGCNNet(num_features=self.feature_dim, num_classes=self.hidden_size)
-            self.SubNet = BiLSTMNet(num_features=self.hidden_size, num_classes=output_size,
-                                     hidden_size=self.hidden_size)
+            # self.MainNet = ARGCNNet(num_features=self.feature_dim, num_classes=self.hidden_size)
+            # self.SubNet = BiLSTMNet(num_features=self.hidden_size, num_classes=output_size,
+            #                          hidden_size=self.hidden_size)
 
-            # self.MainNet = DeepEdgeNet(num_features=feature_dim, num_classes=output_size)
+            self.MainNet = DeepARGCNNet(num_features=feature_dim, num_classes=output_size)
 
         else:
             self.MainNet = BiLSTMNet(num_features=self.feature_dim, num_classes=output_size,
@@ -121,8 +121,8 @@ class ExtractionNet(torch.nn.Module):
             edge_distance = batch.edge_distance
 
             x = self.MainNet(x, edge_idx, edge_type, edge_distance)
-            x = x.reshape(-1, 100, self.hidden_size)
-            x = self.SubNet(x)
+            # x = x.reshape(-1, 100, self.hidden_size)
+            # x = self.SubNet(x)
         else:
             # x shape: [batch size, time step, embed dim]
             x = self.MainNet(x)
@@ -255,11 +255,11 @@ class DeepARGCNNet(torch.nn.Module):
         # x = F.dropout(x, p=0.4)
         x = F.elu(x)
         x = self.conv_layer_list[-1](x, edge_index, edge_rep, edge_distance)
-        x = F.leaky_relu(x, 0.1)
-        x = F.dropout(x, p=0.4)
+        # x = F.leaky_relu(x, 0.1)
+        # x = F.dropout(x, p=0.4)
 
         # x = F.elu(x)
 
-        # x = F.log_softmax(x, dim=1)
+        x = F.log_softmax(x, dim=1)
 
         return x
