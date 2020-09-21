@@ -86,9 +86,9 @@ class ARGCN_dep_distance_conv(MessagePassing):
 
         uniform(size, self.bias)
 
-        torch.nn.init.xavier_normal_(self.dep_emb_dim.weight)
+        torch.nn.init.xavier_normal_(self.dep_embedding.weight)
 
-        torch.nn.init.xavier_normal_(self.distance_emb_dim.weight)
+        torch.nn.init.xavier_normal_(self.distance_embedding.weight)
 
 
     def forward(self, x, edge_index, edge_type, edge_distance, edge_norm=None, size=None):
