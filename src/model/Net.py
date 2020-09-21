@@ -75,7 +75,7 @@ class ExtractionNet(torch.nn.Module):
         if self.have_word_emb:
             if self.word_emb_mode == "w2v":
                 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-                self.word_embed.weight = torch.nn.Parameter(self.w2v_matrix.to(device), requires_grad=True)
+                self.word_embed.weight = torch.nn.Parameter(self.w2v_matrix.to(device), requires_grad=False)
 
         # self.tag_embedding.weight = torch.nn.Parameter(torch.eye(4), requires_grad=True)
         torch.nn.init.xavier_normal_(self.target_embedding.weight)
@@ -257,7 +257,6 @@ class DeepARGCNNet(torch.nn.Module):
         x = self.conv_layer_list[-1](x, edge_index, edge_rep, edge_distance)+x
 
         x = F.leaky_relu(x, 0.1)
-        x = F.dropout(x, p=0.4)
 
         # x = F.elu(x)
 
