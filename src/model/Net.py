@@ -60,7 +60,8 @@ class ExtractionNet(torch.nn.Module):
 
         if graph_mode==True:
 
-            self.MainNet = DeepARGCNNet(num_features=self.feature_dim, num_classes=self.hidden_size, conv_layer_type="RGCN")
+            # self.MainNet = DeepARGCNNet(num_features=self.feature_dim, num_classes=self.hidden_size)
+            self.MainNet = DeepRGCNNet(num_features=self.feature_dim, num_classes=self.hidden_size)
 
             self.LSTM_input_dim = self.hidden_size + self.word_embed_dim
             self.SubNet = BiLSTMNet(num_features=self.LSTM_input_dim, num_classes=output_size,
@@ -218,7 +219,7 @@ class RGCNNet(torch.nn.Module):
 
 
 class DeepARGCNNet(torch.nn.Module):
-    def __init__(self, num_features=768, num_classes=9, edge_feature_dim=2, num_mid_layers=3, conv_layer_type="ARGCN"):
+    def __init__(self, num_features=768, num_classes=9, edge_feature_dim=2, num_mid_layers=3):
         super(DeepARGCNNet, self).__init__()
 
         self.num_features = num_features
@@ -227,15 +228,8 @@ class DeepARGCNNet(torch.nn.Module):
         self.norm_layer_list = torch.nn.ModuleList()
         self.conv_layer_list = torch.nn.ModuleList()
 
-        self.conv_layer_type = conv_layer_type
-        assert conv_layer_type in ["ARGCN", "RGCN"]
-        if conv_layer_type == "ARGCN":
-            conv_layer = ARGCN_dep_distance_conv
-        elif conv_layer_type == "RGCN":
-            conv_layer = RGCNConv
-        else:
-            print("wrong conv_layer_type!")
-            return
+
+        conv_layer = ARGCN_dep_distance_conv
 
         self.hidden_dim = 128
 
@@ -254,27 +248,67 @@ class DeepARGCNNet(torch.nn.Module):
 
     def forward(self, x, edge_index, edge_type, edge_distance):
 
-        if self.conv_layer_type == "ARGCN":
-            x = self.conv_layer_list[0](x, edge_index, edge_type, edge_distance)
-        else:
-            x = self.conv_layer_list[0](x, edge_index, edge_type.reshape(-1))
+        x = self.conv_layer_list[0](x, edge_index, edge_type, edge_distance)
+
 
         for i in range(self.num_mid_layers):
             x = self.norm_layer_list[i+1](x)
             x = F.leaky_relu(x, 0.1)
 
-            if self.conv_layer_type == "ARGCN":
-                x = self.conv_layer_list[i + 1](x, edge_index, edge_type, edge_distance) + x
-            else:
-                x = self.conv_layer_list[i + 1](x, edge_index, edge_type.reshape(-1)) + x
+            x = self.conv_layer_list[i + 1](x, edge_index, edge_type, edge_distance) + x
+
+        x = self.norm_layer_list[-1](x)
+        x = F.leaky_relu(x, 0.1)
+        x = self.conv_layer_list[-1](x, edge_index, edge_type, edge_distance)
+
+        x = F.leaky_relu(x, 0.1)
+
+        # x = F.log_softmax(x, dim=1)
+
+        return x
+
+class DeepRGCNNet(torch.nn.Module):
+    def __init__(self, num_features=768, num_classes=9, edge_feature_dim=2, num_mid_layers=3):
+        super(DeepRGCNNet, self).__init__()
+
+        self.num_features = num_features
+        self.num_mid_layers = num_mid_layers
+
+        self.norm_layer_list = torch.nn.ModuleList()
+        self.conv_layer_list = torch.nn.ModuleList()
+
+
+        conv_layer = RGCNConv
+
+        self.hidden_dim = 128
+
+        # self.norm_layer_list.append(torch.nn.LayerNorm(num_features, eps=1e-05))
+
+        self.norm_layer_list.append(torch.nn.BatchNorm1d(num_features, eps=1e-05, momentum=0.1, affine=True))
+        self.conv_layer_list.append(conv_layer(num_features, self.hidden_dim, num_relations=50, num_bases=1))
+
+        for i in range(self.num_mid_layers):
+            # self.norm_layer_list.append(torch.nn.LayerNorm(self.hidden_dim, eps=1e-05))
+            self.norm_layer_list.append(torch.nn.BatchNorm1d(self.hidden_dim, eps=1e-05, momentum=0.1, affine=True))
+            self.conv_layer_list.append(conv_layer(self.hidden_dim, self.hidden_dim, num_relations=50, num_bases=1))
+
+        self.norm_layer_list.append(torch.nn.BatchNorm1d(self.hidden_dim, eps=1e-05, momentum=0.1, affine=True))
+        self.conv_layer_list.append(conv_layer(self.hidden_dim, num_classes, num_relations=50, num_bases=1))
+
+    def forward(self, x, edge_index, edge_type, edge_distance):
+
+
+        x = self.conv_layer_list[0](x, edge_index, edge_type.reshape(-1))
+
+        for i in range(self.num_mid_layers):
+            x = self.norm_layer_list[i+1](x)
+            x = F.leaky_relu(x, 0.1)
+            x = self.conv_layer_list[i + 1](x, edge_index, edge_type.reshape(-1)) + x
 
         x = self.norm_layer_list[-1](x)
         x = F.leaky_relu(x, 0.1)
 
-        if self.conv_layer_type == "ARGCN":
-            x = self.conv_layer_list[-1](x, edge_index, edge_type, edge_distance)
-        else:
-            x = self.conv_layer_list[-1](x, edge_index, edge_type.reshape(-1))
+        x = self.conv_layer_list[-1](x, edge_index, edge_type.reshape(-1))
 
         x = F.leaky_relu(x, 0.1)
 
