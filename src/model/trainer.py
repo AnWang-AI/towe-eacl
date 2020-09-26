@@ -267,7 +267,7 @@ class Trainer():
             # Epoch average loss and accuracy.
             loss = total_loss / total_num
 
-            accuracy = self.metric_f1_score(y, pred, detail=False)
+            # accuracy = self.metric_f1_score(y, pred, detail=False)
 
             ie_score, ie_precision, ie_recall = self.IE_score(y, pred)
 
@@ -291,7 +291,7 @@ class Trainer():
             # Eval every {eval_frequency} train epoch
             if epoch_index % self.args.eval_frequency == 0:
                 eval_score = self.eval(detail=False, dataset="valid")
-                self.eval(detail=True, dataset="test")
+                self.eval(detail=False, dataset="test")
                 # Save best model
                 if eval_score > best_accuracy:
                     tprint('Best model so far, best eval_score {:.3f} -> {:.3f}'.format(best_accuracy, eval_score))
