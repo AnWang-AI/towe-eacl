@@ -37,10 +37,11 @@ CUDA_VISIBLE_DEVICES=2 python src/model/trainer.py \
 # bert graph LSTM
 CUDA_VISIBLE_DEVICES=7 python src/model/trainer.py \
 --config_path ./src/model/conf_bert_gnn_lstm.ini \
---data_path ./data/14res \
---save_model_name models/Model_ExtractionNet_with_bert_with_graph.ckpt_0 \
+--data_path ./data/16res \
 --epoch 40 --train_batch_size 32 \
---eval_frequency 2
+--eval_frequency 2 \
+--save_model_name models/Model_ExtractionNet_with_bert_with_graph.ckpt_3
+
 
 ## 在windows里的ipython中运行
 # bert LSTM
