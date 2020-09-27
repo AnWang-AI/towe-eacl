@@ -24,15 +24,12 @@ CUDA_VISIBLE_DEVICES=1 python src/model/trainer.py \
 --cuda
 
 # graph + LSTM
-CUDA_VISIBLE_DEVICES=2 python src/model/trainer.py \
---data_path ./data/14res \
---save_model_name models/Model_ExtractionNet_with_graph_RGCN.ckpt \
---build_graph \
---model ExtractionNet \
---loss CrossEntropy \
---epoch 40 --train_batch_size 32 --val_batch_size 32 \
+CUDA_VISIBLE_DEVICES=7 python src/model/trainer.py \
+--config_path ./src/model/conf_w2v_gnn_lstm.ini \
+--data_path ./data/16res \
+--epoch 40 --train_batch_size 32 \
 --eval_frequency 2 \
---cuda
+--save_model_name models/Model_ExtractionNet__with_graph.ckpt_0
 
 # bert graph LSTM
 CUDA_VISIBLE_DEVICES=7 python src/model/trainer.py \
