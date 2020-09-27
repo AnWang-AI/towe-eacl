@@ -23,7 +23,10 @@ class Config:
 
                 # 转化为布尔型
                 if value.lower() in ['true', 'false']:
-                    section_dict[key] = bool(value)
+                    if value.lower() == 'true':
+                        section_dict[key] = True
+                    else:
+                        section_dict[key] = False
 
             self.config_dicts[section_name] = section_dict
 
