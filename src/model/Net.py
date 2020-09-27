@@ -15,53 +15,60 @@ from src.model.layers.ARGCN_dep_distance_conv import ARGCN_dep_distance_conv, AR
 from src.tools.utils import init_w2v_matrix
 
 class ExtractionNet(torch.nn.Module):
-    def __init__(self, word_embed_dim, output_size, word_emb_mode="w2v", graph_mode=False, have_tag=False, have_word_emb=True):
+    def __init__(self, word_embed_dim, output_size, config_dicts, word_emb_mode="w2v", graph_mode=False):
         super(ExtractionNet, self).__init__()
+
+        self.default_config = config_dicts['default']
+        self.preprocess_config = config_dicts['preprocess']
+        self.model_config = config_dicts['model']
 
         self.word_embed_dim = word_embed_dim
         self.output_size = output_size
 
-        self.have_word_emb = have_word_emb
+        self.have_word_emb = self.model_config['have_word_emb']
 
         self.feature_dim = 0
 
-        if have_word_emb:
+        if self.have_word_emb:
             self.word_emb_mode = word_emb_mode
             assert word_emb_mode in ["w2v", "bert"]
             if word_emb_mode == "w2v":
 
                 # w2v_path = "./data/14res/word_embedding.txt"
-                w2v_path = "./data/full_glove.txt"
+                w2v_path = self.preprocess_config['w2v_path']
 
                 self.w2v_matrix, self.vocab_id_map, self.id_vocab_map = init_w2v_matrix(w2v_path)
                 self.w2v_matrix = torch.from_numpy(np.float32(self.w2v_matrix))
-                vocab_size = 7000
+                vocab_size = self.preprocess_config['vocab_size']
                 self.word_embed = nn.Embedding(vocab_size, word_embed_dim)
 
             else:
-                bert_path = "models/bert-base-uncased"
+                bert_path = self.preprocess_config['pretrained_bert_path']
                 self.embedding_model = BertModel.from_pretrained(bert_path)
 
             self.feature_dim += self.word_embed_dim
 
-        self.target_emb_dim = 100
+        self.target_emb_dim = self.model_config['target_embedding_dim']
         self.target_embedding = torch.nn.Embedding(num_embeddings=output_size, embedding_dim=self.target_emb_dim)
         self.feature_dim += self.target_emb_dim
 
-        self.have_tag = have_tag
-        if have_tag:
+        self.have_tag = self.model_config['have_tag']
+        if self.have_tag:
             self.tag_emb_dim = 100
             self.tag_embedding = torch.nn.Embedding(num_embeddings=50, embedding_dim=self.tag_emb_dim)
             self.feature_dim += self.tag_emb_dim
 
-        self.hidden_size = 128
+        self.hidden_size = self.model_config['hidden_size']
 
         self.graph_mode = graph_mode
 
         if graph_mode==True:
-
-            self.MainNet = DeepARGCNNet(num_features=self.feature_dim, num_classes=self.hidden_size)
-            # self.MainNet = DeepRGCNNet(num_features=self.feature_dim, num_classes=self.hidden_size)
+            if self.model_config['mainnet'] == "DeepARGCNNet":
+                self.MainNet = DeepARGCNNet(num_features=self.feature_dim, num_classes=self.hidden_size)
+            elif self.model_config['mainnet'] == "DeepRGCNNet":
+                self.MainNet = DeepRGCNNet(num_features=self.feature_dim, num_classes=self.hidden_size)
+            else:
+                return
 
             self.LSTM_input_dim = self.hidden_size + self.word_embed_dim
             self.SubNet = BiLSTMNet(num_features=self.LSTM_input_dim, num_classes=output_size,

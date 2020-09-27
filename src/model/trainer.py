@@ -19,27 +19,28 @@ from src.model.Net import ExtractionNet
 from src.tools.utils import MultiFocalLoss, tprint
 from src.tools.TOWE_utils import score_BIO
 
+from src.model.ConfigParser import Config
+
 sys.path.append('./')
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data_path', type=str, default='/home/intsig/PycharmProject/TOWE-EACL/data/14res')
-parser.add_argument('--epochs', type=int, default=30)
-parser.add_argument('--train_batch_size', type=int, default=2)
-parser.add_argument('--val_batch_size', type=int, default=2)
+parser.add_argument('--config_path', type=str, default='./src/model/conf_bert_gnn_lstm.ini')
+parser.add_argument('--data_path', type=str, default='')
+parser.add_argument('--epochs', type=int, default=None)
+parser.add_argument('--train_batch_size', type=int, default=None)
 parser.add_argument('--load_model_name', type=str, default='')
-parser.add_argument('--save_model_name', type=str, default='models/EdgeNet_model.ckpt')
-parser.add_argument('--train_log', type=str, default='log/train_log')
-parser.add_argument('--val_log', type=str, default='log/val_log')
+parser.add_argument('--save_model_name', type=str, default='')
 parser.add_argument('--eval_frequency', type=int, default=5)
-parser.add_argument('--use_bert', action='store_true')
-parser.add_argument('--build_graph', action='store_true')
-parser.add_argument('--model', type=str, default='Tag_BiLSTM')
-parser.add_argument('--loss', type=str, default='CrossEntropy')
-parser.add_argument('--cuda', action='store_true')
 args = parser.parse_args()
 
+config = Config(args.config_path)
+config.reset_config(args)
+config_dict = config.config_dicts
+default_config = config.config_dicts['default']
+preprocess_config = config.config_dicts['preprocess']
+model_config = config.config_dicts['model']
 
 def load_data(data_path, train_batch_size=1, val_batch_size=1, use_bert=False, build_graph=False):
 
@@ -77,13 +78,18 @@ def load_data(data_path, train_batch_size=1, val_batch_size=1, use_bert=False, b
 
 class Trainer():
 
-    def __init__(self, loader, model, criterion, optimizer, args):
+    def __init__(self, loader, model, criterion, optimizer, args, config_dict):
         self.train_loader, self.val_loader, self.test_loader = loader['train'], loader['valid'], loader['test']
         self.model = model.to(device)
         self.criterion = criterion.to(device)
         self.optimizer = optimizer
-        self.cuda = True if torch.cuda.is_available() and args.cuda else False
         self.args = args
+        self.model_config = config_dict
+        self.default_config = config.config_dicts['default']
+        self.preprocess_config = config.config_dicts['preprocess']
+        self.model_config = config.config_dicts['model']
+        self.cuda = True if torch.cuda.is_available() and self.model_config['cuda'] else False
+
 
     def eval(self, detail=False, dataset="valid"):
         # Transfer model mode from train to eval.
@@ -168,7 +174,7 @@ class Trainer():
                                                                                       score_dict["f1"])
         tprint(BIO_info)
         # Save train info to log file.
-        self.save_log(BIO_info, self.args.val_log)
+        self.save_log(BIO_info, self.model_config['val_log'])
 
 
         print('-' * 40)
@@ -186,12 +192,12 @@ class Trainer():
 
         total_num = len(self.train_loader)
 
-        for i in range(self.args.epochs):
+        for i in range(self.model_config['epochs']):
             epoch_index = i + 1
 
             # 调整学习率以便开启bert的训练
             trian_bert = False
-            if args.use_bert:  ## 使用bert的时候
+            if self.default_config['use_bert']:  ## 使用bert的时候
                 start_to_train_bert_epoch = 10
                 if i >= start_to_train_bert_epoch:
                     for param_group in self.optimizer.param_groups:
@@ -286,7 +292,7 @@ class Trainer():
             tprint(BIO_info)
 
             # Save train info to log file.
-            self.save_log(BIO_info, self.args.train_log)
+            self.save_log(BIO_info, self.model_config['train_log'])
 
             # Eval every {eval_frequency} train epoch
             if epoch_index % self.args.eval_frequency == 0:
@@ -298,7 +304,7 @@ class Trainer():
                     best_accuracy = eval_score
                     self.save_model(epoch_index, loss, eval_score, self.args.save_model_name)
 
-        self.load_model(model_path=self.args.save_model_name)
+        self.load_model(model_path=self.model_config['save_model_name'])
         self.eval(detail=True, dataset="test")
 
     def metric_f1_score(self, y, pred, detail=False):
@@ -386,21 +392,30 @@ if __name__ == "__main__":
 
     num_class = 4
 
-    loader = load_data(args.data_path, args.train_batch_size, args.val_batch_size, args.use_bert, args.build_graph)
+    loader = load_data(preprocess_config['data_path'],
+                       model_config['train_batch_size'],
+                       model_config['val_batch_size'],
+                       default_config['use_bert'],
+                       default_config['build_graph'])
 
-    assert args.model in ["Target_BiLSTM_with_bert", "Tag_BiLSTM", "ExtractionNet"]
-    model_list = {"Target_BiLSTM_with_bert": ExtractionNet,
-                  "Tag_BiLSTM": ExtractionNet,
-                  "ExtractionNet": ExtractionNet}
-    if args.use_bert:
-        model = model_list[args.model](word_embed_dim=768, output_size=num_class, word_emb_mode="bert", graph_mode=args.build_graph)
+    if default_config['use_bert']:
+        word_embed_dim = 768
+        word_emb_mode = "bert"
     else:
-        model = model_list[args.model](word_embed_dim=300, output_size=num_class, word_emb_mode="w2v", graph_mode=args.build_graph)
+        word_embed_dim = 300
+        word_emb_mode = "w2v"
+    model = ExtractionNet(word_embed_dim=word_embed_dim,
+                          output_size=num_class,
+                          config_dicts=config_dict,
+                          word_emb_mode=word_emb_mode,
+                          graph_mode=default_config['build_graph'])
 
     print(model)
 
-    assert args.loss in ["CrossEntropy", "FacalLoss"]
-    if args.loss == "CrossEntropy":
+    config.print_config()
+
+    assert model_config['loss'] in ["CrossEntropy", "FacalLoss"]
+    if model_config['loss'] == "CrossEntropy":
         # loss_op = torch.nn.CrossEntropyLoss()
         loss_op = torch.nn.NLLLoss()
     else:
@@ -408,6 +423,6 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
 
-    trainer = Trainer(loader, model, loss_op, optimizer, args)
+    trainer = Trainer(loader, model, loss_op, optimizer, args, config_dict)
     trainer.load_model()
     trainer.train()

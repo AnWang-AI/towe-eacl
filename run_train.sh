@@ -36,15 +36,11 @@ CUDA_VISIBLE_DEVICES=2 python src/model/trainer.py \
 
 # bert graph LSTM
 CUDA_VISIBLE_DEVICES=7 python src/model/trainer.py \
+--config_path ./src/model/conf_bert_gnn_lstm.ini \
 --data_path ./data/14res \
---save_model_name models/Model_ExtractionNet_with_bert_with_graph.ckpt_3 \
---use_bert \
---build_graph \
---model Target_BiLSTM_with_bert \
---loss CrossEntropy \
---epoch 40 --train_batch_size 32 --val_batch_size 32 \
---eval_frequency 2 \
---cuda
+--save_model_name models/Model_ExtractionNet_with_bert_with_graph.ckpt_0 \
+--epoch 40 --train_batch_size 16 \
+--eval_frequency 2
 
 ## 在windows里的ipython中运行
 # bert LSTM
