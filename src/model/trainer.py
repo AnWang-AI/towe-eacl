@@ -161,7 +161,7 @@ class Trainer():
         ie_score, ie_precision, ie_recall = self.IE_score(y, pred)
 
         # Print train info.
-        info = 'loss: {:.3f}, IE precision: {:.3f}, IE recall: {:.3f}, IE f1: {:.3f}'.format(loss,
+        info = 'loss: {:.4f}, IE precision: {:.4f}, IE recall: {:.4f}, IE f1: {:.4f}'.format(loss,
                                                                                            ie_precision, ie_recall, ie_score)
         tprint(info)
 
@@ -169,7 +169,7 @@ class Trainer():
         label_list = [y.tolist() for y in ys]
         score_dict = score_BIO(pred_list, label_list, ignore_index=3)
         BIO_score = score_dict["f1"]
-        BIO_info = 'BIO precision: {:.3f}, BIO recall: {:.3f}, BIO f1: {:.3f}'.format(score_dict["precision"],
+        BIO_info = 'BIO precision: {:.4f}, BIO recall: {:.4f}, BIO f1: {:.4f}'.format(score_dict["precision"],
                                                                                       score_dict["recall"],
                                                                                       score_dict["f1"])
         tprint(BIO_info)
@@ -278,7 +278,7 @@ class Trainer():
             ie_score, ie_precision, ie_recall = self.IE_score(y, pred)
 
             # Print train info.
-            info = 'Train: Epoch: {}, loss: {:.3f}, IE precision: {:.3f}, IE recall: {:.3f}, IE f1: {:.3f}'.format(epoch_index, loss,
+            info = 'Train: Epoch: {}, loss: {:.4f}, IE precision: {:.4f}, IE recall: {:.4f}, IE f1: {:.4f}'.format(epoch_index, loss,
                                                                                                  ie_precision,
                                                                                                  ie_recall, ie_score)
             tprint(info)
@@ -286,7 +286,7 @@ class Trainer():
             pred_list = [pred.tolist() for pred in preds]
             label_list = [y.tolist() for y in ys]
             score_dict = score_BIO(pred_list, label_list, ignore_index=3)
-            BIO_info = 'Train: BIO precision: {:.3f}, BIO recall: {:.3f}, BIO f1: {:.3f}'.format(score_dict["precision"],
+            BIO_info = 'Train: BIO precision: {:.4f}, BIO recall: {:.4f}, BIO f1: {:.4f}'.format(score_dict["precision"],
                                                                                           score_dict["recall"],
                                                                                           score_dict["f1"])
             tprint(BIO_info)
@@ -300,7 +300,7 @@ class Trainer():
                 self.eval(detail=False, dataset="test")
                 # Save best model
                 if eval_score > best_accuracy:
-                    tprint('Best model so far, best eval_score {:.3f} -> {:.3f}'.format(best_accuracy, eval_score))
+                    tprint('Best model so far, best eval_score {:.4f} -> {:.4f}'.format(best_accuracy, eval_score))
                     best_accuracy = eval_score
                     self.save_model(epoch_index, loss, eval_score, self.args.save_model_name)
 
@@ -379,7 +379,7 @@ class Trainer():
             epoch = ckpt['epoch']
             loss = ckpt['loss']
             best_accuracy = ckpt['best_accuracy']
-            tprint('Load successful! model saved at {} epoch, best accuracy: {:.3f}, loss: {:.3f}'.format(epoch, best_accuracy,
+            tprint('Load successful! model saved at {} epoch, best accuracy: {:.4f}, loss: {:.4f}'.format(epoch, best_accuracy,
                                                                                                          loss))
         else:
             tprint('Train from beginning ...')
