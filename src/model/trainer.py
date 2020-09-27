@@ -78,13 +78,13 @@ def load_data(data_path, train_batch_size=1, val_batch_size=1, use_bert=False, b
 
 class Trainer():
 
-    def __init__(self, loader, model, criterion, optimizer, args, config_dict):
+    def __init__(self, loader, model, criterion, optimizer, args, config):
         self.train_loader, self.val_loader, self.test_loader = loader['train'], loader['valid'], loader['test']
         self.model = model.to(device)
         self.criterion = criterion.to(device)
         self.optimizer = optimizer
         self.args = args
-        self.model_config = config_dict
+        self.config = config
         self.default_config = config.config_dicts['default']
         self.preprocess_config = config.config_dicts['preprocess']
         self.model_config = config.config_dicts['model']
@@ -304,6 +304,7 @@ class Trainer():
                     best_accuracy = eval_score
                     self.save_model(epoch_index, loss, eval_score, self.args.save_model_name)
 
+        self.config.print_config()
         self.load_model(model_path=self.model_config['save_model_name'])
         self.eval(detail=True, dataset="test")
 
@@ -423,6 +424,6 @@ if __name__ == "__main__":
 
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
 
-    trainer = Trainer(loader, model, loss_op, optimizer, args, config_dict)
+    trainer = Trainer(loader, model, loss_op, optimizer, args, config)
     trainer.load_model()
     trainer.train()

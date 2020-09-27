@@ -39,7 +39,7 @@ CUDA_VISIBLE_DEVICES=7 python src/model/trainer.py \
 --config_path ./src/model/conf_bert_gnn_lstm.ini \
 --data_path ./data/14res \
 --save_model_name models/Model_ExtractionNet_with_bert_with_graph.ckpt_0 \
---epoch 40 --train_batch_size 16 \
+--epoch 40 --train_batch_size 32 \
 --eval_frequency 2
 
 ## 在windows里的ipython中运行
