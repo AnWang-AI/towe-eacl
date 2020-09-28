@@ -352,7 +352,7 @@ class DeepGATNet(torch.nn.Module):
         self.norm_layer_list.append(torch.nn.BatchNorm1d(self.hidden_dim, eps=1e-05, momentum=0.1, affine=True))
         self.conv_layer_list.append(conv_layer(self.hidden_dim, num_classes))
 
-    def forward(self, x, edge_index):
+    def forward(self, x, edge_index, edge_type, edge_distance):
 
 
         x = self.conv_layer_list[0](x, edge_index)
