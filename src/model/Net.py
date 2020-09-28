@@ -67,6 +67,8 @@ class ExtractionNet(torch.nn.Module):
                 self.MainNet = DeepARGCNNet(num_features=self.feature_dim, num_classes=self.hidden_size)
             elif self.model_config['mainnet'] == "DeepRGCNNet":
                 self.MainNet = DeepRGCNNet(num_features=self.feature_dim, num_classes=self.hidden_size)
+            elif self.model_config['mainnet'] == "DeepGATNet":
+                self.MainNet = DeepGATNet(num_features=self.feature_dim, num_classes=self.hidden_size)
             else:
                 return
 
@@ -316,6 +318,54 @@ class DeepRGCNNet(torch.nn.Module):
         x = F.leaky_relu(x, 0.1)
 
         x = self.conv_layer_list[-1](x, edge_index, edge_type.reshape(-1))
+
+        x = F.leaky_relu(x, 0.1)
+
+        # x = F.log_softmax(x, dim=1)
+
+        return x
+
+class DeepGATNet(torch.nn.Module):
+    def __init__(self, num_features=768, num_classes=9, num_mid_layers=3):
+        super(DeepGATNet, self).__init__()
+
+        self.num_features = num_features
+        self.num_mid_layers = num_mid_layers
+
+        self.norm_layer_list = torch.nn.ModuleList()
+        self.conv_layer_list = torch.nn.ModuleList()
+
+        conv_layer = GATConv
+
+        self.hidden_dim = 128
+
+        # self.norm_layer_list.append(torch.nn.LayerNorm(num_features, eps=1e-05))
+
+        self.norm_layer_list.append(torch.nn.BatchNorm1d(num_features, eps=1e-05, momentum=0.1, affine=True))
+        self.conv_layer_list.append(conv_layer(num_features, self.hidden_dim))
+
+        for i in range(self.num_mid_layers):
+            # self.norm_layer_list.append(torch.nn.LayerNorm(self.hidden_dim, eps=1e-05))
+            self.norm_layer_list.append(torch.nn.BatchNorm1d(self.hidden_dim, eps=1e-05, momentum=0.1, affine=True))
+            self.conv_layer_list.append(conv_layer(self.hidden_dim, self.hidden_dim))
+
+        self.norm_layer_list.append(torch.nn.BatchNorm1d(self.hidden_dim, eps=1e-05, momentum=0.1, affine=True))
+        self.conv_layer_list.append(conv_layer(self.hidden_dim, num_classes))
+
+    def forward(self, x, edge_index, edge_type, edge_distance):
+
+
+        x = self.conv_layer_list[0](x, edge_index, edge_type.reshape(-1))
+
+        for i in range(self.num_mid_layers):
+            x = self.norm_layer_list[i+1](x)
+            x = F.leaky_relu(x, 0.1)
+            x = self.conv_layer_list[i + 1](x, edge_index) + x
+
+        x = self.norm_layer_list[-1](x)
+        x = F.leaky_relu(x, 0.1)
+
+        x = self.conv_layer_list[-1](x, edge_index)
 
         x = F.leaky_relu(x, 0.1)
 
