@@ -199,6 +199,7 @@ class ARGCN_dep_distance_conv_ver2(MessagePassing):
         self.edge_trans2 = Param(torch.Tensor(self.distance_emb_dim, 1))
 
         self.att_weight = Param(torch.Tensor(out_channels*2 + self.distance_emb_dim, 1))
+        self.att_bias = Param(torch.Tensor(1))
 
         if root_weight:
             self.root_weight = Param(torch.Tensor(in_channels, out_channels))
@@ -210,6 +211,7 @@ class ARGCN_dep_distance_conv_ver2(MessagePassing):
         self.Key_weight = Param(torch.Tensor(in_channels, out_channels))
 
         self.sum_weight = Param(torch.Tensor(self.dep_emb_dim+1, 1))
+        self.sum_bias = Param(torch.Tensor(1))
 
         if bias:
             self.bias = Param(torch.Tensor(out_channels))
@@ -229,8 +231,10 @@ class ARGCN_dep_distance_conv_ver2(MessagePassing):
         uniform(size, self.edge_trans1)
 
         uniform(size, self.att_weight)
+        uniform(size, self.att_bias)
 
         uniform(size, self.sum_weight)
+        uniform(size, self.sum_bias)
 
         uniform(size, self.bias)
 
@@ -260,11 +264,11 @@ class ARGCN_dep_distance_conv_ver2(MessagePassing):
         trans_x_i = torch.matmul(x_i, self.Qusetion_weight)
         trans_x_j = torch.matmul(x_j, self.Key_weight)
 
-        beta = torch.matmul(torch.cat([trans_x_i, trans_x_j, gamma], dim=-1), self.att_weight)
+        beta = torch.matmul(torch.cat([trans_x_i, trans_x_j, gamma], dim=-1), self.att_weight) + self.att_bias
         # beta = ((trans_x_i * trans_x_j).sum(dim=1)/ (trans_x_i.sum(dim=1) * trans_x_j.sum(dim=1) + 1e-4)).reshape(-1,1)
         beta = F.leaky_relu(beta, self.negative_slope)
 
-        edge_weight = torch.matmul(torch.cat([alpha, beta], dim=-1), self.sum_weight)
+        edge_weight = torch.matmul(torch.cat([alpha, beta], dim=-1), self.sum_weight) + self.sum_bias
         edge_weight = F.leaky_relu(edge_weight, self.negative_slope)
 
         edge_weight = softmax(edge_weight, edge_index_j, ptr, size_i)

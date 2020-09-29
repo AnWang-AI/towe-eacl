@@ -399,10 +399,6 @@ class DeepARGCNNet(torch.nn.Module):
 
         x = F.leaky_relu(x, 0.1)
 
-        x = F.dropout(x, p=0.4)
-
-        # x = F.log_softmax(x, dim=1)
-
         return x
 
 class DeepRGCNNet(torch.nn.Module):
@@ -449,8 +445,6 @@ class DeepRGCNNet(torch.nn.Module):
         x = self.conv_layer_list[-1](x, edge_index, edge_type.reshape(-1))
 
         x = F.leaky_relu(x, 0.1)
-
-        # x = F.log_softmax(x, dim=1)
 
         return x
 
