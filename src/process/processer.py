@@ -19,6 +19,8 @@ sys.path.append('..')
 
 class Processer():
     def __init__(self, data_path, word_emb_mode="w2v", build_graph=True):
+        self.set_random_seed()
+
         self.data_path = data_path
         train_file_name = "train.tsv"
         test_file_name = "test.tsv"
