@@ -57,7 +57,7 @@ class ARGCN_dep_distance_conv(MessagePassing):
         self.edge_feature_dim = edge_feature_dim
 
         self.negative_slope = 0.1
-        self.dropout = 0.4
+        self.dropout = 0.6
 
         self.neighbor_weight = Param(torch.Tensor(in_channels, out_channels))
 
