@@ -399,6 +399,8 @@ class DeepARGCNNet(torch.nn.Module):
 
         x = F.leaky_relu(x, 0.1)
 
+        x = F.dropout(x, p=0.4)
+
         # x = F.log_softmax(x, dim=1)
 
         return x
