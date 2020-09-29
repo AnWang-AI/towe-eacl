@@ -51,7 +51,7 @@ def set_random_seed():
 
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.enable = True
+    torch.backends.cudnn.enable = False
 
 
 def load_data(data_path, train_batch_size=1, val_batch_size=1, use_bert=False, build_graph=False):
