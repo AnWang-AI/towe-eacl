@@ -268,10 +268,10 @@ class ARGCN_dep_distance_conv_ver2(MessagePassing):
         # beta = ((trans_x_i * trans_x_j).sum(dim=1)/ (trans_x_i.sum(dim=1) * trans_x_j.sum(dim=1) + 1e-4)).reshape(-1,1)
         beta = F.leaky_relu(beta, self.negative_slope)
 
+        beta = softmax(beta, edge_index_j, ptr, size_i)
+
         edge_weight = torch.matmul(torch.cat([alpha, beta], dim=-1), self.sum_weight) + self.sum_bias
         edge_weight = F.leaky_relu(edge_weight, self.negative_slope)
-
-        edge_weight = softmax(edge_weight, edge_index_j, ptr, size_i)
 
         out = torch.matmul(x_j, self.neighbor_weight) * edge_weight
 
