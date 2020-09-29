@@ -92,7 +92,7 @@ class Trainer():
         self.optimizer = optimizer
 
     def set_random_seed(self):
-        seed = 1234
+        seed = 2333
         np.random.seed(seed)
         torch.manual_seed(seed)
         if self.cuda:

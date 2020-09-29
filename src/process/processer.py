@@ -46,7 +46,7 @@ class Processer():
             self.grapher = Grapher()
 
     def set_random_seed(self):
-        seed = 1234
+        seed = 2333
         np.random.seed(seed)
         torch.manual_seed(seed)
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
