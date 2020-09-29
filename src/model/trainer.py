@@ -79,17 +79,17 @@ def load_data(data_path, train_batch_size=1, val_batch_size=1, use_bert=False, b
 class Trainer():
 
     def __init__(self, loader, model, criterion, optimizer, args, config):
-        self.set_random_seed()
-        self.train_loader, self.val_loader, self.test_loader = loader['train'], loader['valid'], loader['test']
-        self.model = model.to(device)
-        self.criterion = criterion.to(device)
-        self.optimizer = optimizer
         self.args = args
         self.config = config
         self.default_config = config.config_dicts['default']
         self.preprocess_config = config.config_dicts['preprocess']
         self.model_config = config.config_dicts['model']
         self.cuda = True if torch.cuda.is_available() and self.model_config['cuda'] else False
+        self.set_random_seed()
+        self.train_loader, self.val_loader, self.test_loader = loader['train'], loader['valid'], loader['test']
+        self.model = model.to(device)
+        self.criterion = criterion.to(device)
+        self.optimizer = optimizer
 
     def set_random_seed(self):
         seed = 1234
