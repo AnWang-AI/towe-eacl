@@ -40,7 +40,7 @@ def split_dev(train_texts, train_t, train_ow):
     # print(len(instances_index))
     assert curr_i + 1 == len(instances_index)
     length = len(instances_index)
-    np.random.seed(99)
+    np.random.seed(1)
     index_list = np.random.permutation(length).tolist()
     # np.random.shuffle(index_list)
     train_index = [instances_index[i] for i in index_list[0:length - length // 5]]
