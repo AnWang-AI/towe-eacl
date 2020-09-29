@@ -44,7 +44,7 @@ model_config = config.config_dicts['model']
 
 
 def set_random_seed():
-    seed = 2333
+    seed = 121
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
