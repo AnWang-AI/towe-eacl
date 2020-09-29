@@ -189,11 +189,11 @@ class ExtractionNet_v2(torch.nn.Module):
 
         if graph_mode==True:
 
-            self.SubNet1 = BiLSTMNet(num_features=self.feature_dim, num_classes=output_size,
+            self.SubNet1 = BiLSTMNet(num_features=self.feature_dim, num_classes=self.hidden_size,
                                      hidden_size=self.hidden_size)
 
             mainnet_name = self.model_config['mainnet']
-            self.MainNet = eval(mainnet_name)(num_features=self.feature_dim, num_classes=self.hidden_size)
+            self.MainNet = eval(mainnet_name)(num_features=self.hidden_size, num_classes=self.hidden_size)
 
             self.LSTM_input_dim = self.hidden_size + self.word_embed_dim
 
