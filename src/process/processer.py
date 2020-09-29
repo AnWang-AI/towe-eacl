@@ -49,7 +49,8 @@ class Processer():
         seed = 1234
         np.random.seed(seed)
         torch.manual_seed(seed)
-        if self.config.device == "cuda":
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        if device == torch.device('cuda'):
             torch.cuda.manual_seed_all(seed)
 
     def load_data(self):

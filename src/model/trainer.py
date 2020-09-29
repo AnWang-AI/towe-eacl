@@ -95,7 +95,8 @@ class Trainer():
         seed = 1234
         np.random.seed(seed)
         torch.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
+        if self.cuda:
+            torch.cuda.manual_seed_all(seed)
 
     def eval(self, detail=False, dataset="valid"):
         # Transfer model mode from train to eval.
