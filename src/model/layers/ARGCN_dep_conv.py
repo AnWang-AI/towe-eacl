@@ -37,8 +37,8 @@ class ARGCN_dep_conv(MessagePassing):
         self.out_channels = out_channels
         self.edge_feature_dim = edge_feature_dim
 
-        self.negative_slope = 0.2
-        self.dropout = 0.5
+        self.negative_slope = 0.1
+        self.dropout = 0.4
 
         self.dep_emb_dim = 100
 
