@@ -44,7 +44,7 @@ model_config = config.config_dicts['model']
 
 
 def set_random_seed():
-    seed = 996 #999
+    seed = 1001 #999
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -297,7 +297,7 @@ class Trainer():
             pred_list = [pred.tolist() for pred in preds]
             label_list = [y.tolist() for y in ys]
             score_dict = score_BIO(pred_list, label_list, ignore_index=3)
-            BIO_info = 'Train: BIO precision: {:.4f}, BIO recall: {:.4f}, BIO f1: {:.4f}'.format(score_dict["precision"],
+            BIO_info = 'Epoch: {} Train: BIO precision: {:.4f}, BIO recall: {:.4f}, BIO f1: {:.4f}'.format(epoch_index, score_dict["precision"],
                                                                                           score_dict["recall"],
                                                                                           score_dict["f1"])
             tprint(BIO_info)
