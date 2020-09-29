@@ -252,7 +252,7 @@ class ExtractionNet_v2(torch.nn.Module):
         if self.graph_mode:
             x = self.SubNet1(x)
 
-            x = x.reshape(-1, self.feature_dim)
+            x = x.reshape(-1, self.hidden_size)
             # x = x.reshape(-1, self.word_embed_dim + self.target_emb_dim + self.tag_embed_dim)
             edge_idx = batch.edge_index
             edge_type = batch.edge_type
