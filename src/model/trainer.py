@@ -174,7 +174,7 @@ class Trainer():
         # Print train info.
         info = 'loss: {:.4f}, IE precision: {:.4f}, IE recall: {:.4f}, IE f1: {:.4f}'.format(loss,
                                                                                            ie_precision, ie_recall, ie_score)
-        tprint(info)
+        # tprint(info)
 
         pred_list = [pred.tolist() for pred in preds]
         label_list = [y.tolist() for y in ys]
@@ -292,7 +292,7 @@ class Trainer():
             info = 'Train: Epoch: {}, loss: {:.4f}, IE precision: {:.4f}, IE recall: {:.4f}, IE f1: {:.4f}'.format(epoch_index, loss,
                                                                                                  ie_precision,
                                                                                                  ie_recall, ie_score)
-            tprint(info)
+            # tprint(info)
 
             pred_list = [pred.tolist() for pred in preds]
             label_list = [y.tolist() for y in ys]
