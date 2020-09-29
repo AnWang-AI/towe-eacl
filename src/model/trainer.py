@@ -405,11 +405,13 @@ if __name__ == "__main__":
     else:
         word_embed_dim = 300
         word_emb_mode = "w2v"
-    model = ExtractionNet(word_embed_dim=word_embed_dim,
-                          output_size=num_class,
-                          config_dicts=config_dict,
-                          word_emb_mode=word_emb_mode,
-                          graph_mode=default_config['build_graph'])
+
+    model_name = model_config['model']
+    model = eval(model_name)(word_embed_dim=word_embed_dim,
+                             output_size=num_class,
+                             config_dicts=config_dict,
+                             word_emb_mode=word_emb_mode,
+                             graph_mode=default_config['build_graph'])
 
     print(model)
 
