@@ -43,8 +43,8 @@ def split_dev(train_texts, train_t, train_ow):
     np.random.seed(1)
     index_list = np.random.permutation(length).tolist()
     # np.random.shuffle(index_list)
-    train_index = [instances_index[i] for i in index_list[0:length - length // 5]]
-    dev_index = [instances_index[i] for i in index_list[length - length // 5:]]
+    train_index = [instances_index[i] for i in index_list[0:length - length // 10]]
+    dev_index = [instances_index[i] for i in index_list[length - length // 10:]]
     train_i_index = [i for l in train_index for i in l]
     dev_i_index = [i for l in dev_index for i in l]
     dev_texts, dev_t, dev_ow = ([train_texts[i] for i in dev_i_index], [train_t[i] for i in dev_i_index],
