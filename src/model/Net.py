@@ -355,7 +355,7 @@ class RGCNNet(torch.nn.Module):
 
 
 class DeepARGCNNet(torch.nn.Module):
-    def __init__(self, num_features=768, num_classes=9, edge_feature_dim=2, num_mid_layers=2):
+    def __init__(self, num_features=768, num_classes=9, edge_feature_dim=2, num_mid_layers=3):
         super(DeepARGCNNet, self).__init__()
 
         self.num_features = num_features
