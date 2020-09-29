@@ -205,12 +205,12 @@ class Trainer():
                     trian_bert = True
                 else:
                     trian_bert = False
-            else:   ## 不适用bert的时候
-                start_to_train_word_emb = 40
-                if i > start_to_train_word_emb:
-                    for param_group in self.optimizer.param_groups:
-                        param_group['lr'] = 1e-5
-                    self.model.word_embed.weight.requires_grad = True
+            # else:   ## 不适用bert的时候
+            #     start_to_train_word_emb = 40
+            #     if i > start_to_train_word_emb:
+            #         for param_group in self.optimizer.param_groups:
+            #             param_group['lr'] = 1e-5
+            #         self.model.word_embed.weight.requires_grad = True
 
 
             total_loss = 0.0
