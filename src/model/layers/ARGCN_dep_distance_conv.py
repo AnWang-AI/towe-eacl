@@ -297,7 +297,7 @@ class ARGCN_dep_distance_conv_v2(MessagePassing):
                                                      self.in_channels,
                                                      self.out_channels,)
 
-class ARGCN_dep_distance_conv_v3(MessagePassing):
+class ARGCN_dep_distance_conv_multi_head(MessagePassing):
     """
     Args:
         in_channels (int): Size of each input sample.
@@ -309,9 +309,9 @@ class ARGCN_dep_distance_conv_v3(MessagePassing):
         **kwargs (optional): Additional arguments of
             :class:`torch_geometric.nn.conv.MessagePassing`.
     """
-    def __init__(self, in_channels, out_channels, edge_feature_dim=2, num_heads=4,
+    def __init__(self, in_channels, out_channels, edge_feature_dim=2, num_heads=8,
                  root_weight=True, bias=True, **kwargs):
-        super(ARGCN_dep_distance_conv_v3, self).__init__(aggr='add', **kwargs)
+        super(ARGCN_dep_distance_conv_multi_head, self).__init__(aggr='add', **kwargs)
 
         self.in_channels = in_channels
         self.out_channels = out_channels
@@ -389,7 +389,6 @@ class ARGCN_dep_distance_conv_v3(MessagePassing):
     def message(self, x_i, x_j, edge_index_j, size_i, edge_type, edge_distance, edge_norm, ptr):
 
         alpha = self.dep_embedding(edge_type)
-        # alpha = torch.matmul(alpha, self.edge_trans1)
         # alpha = F.leaky_relu(alpha, self.negative_slope)
         alpha = alpha.reshape(-1, self.dep_emb_dim)
 
@@ -425,18 +424,8 @@ class ARGCN_dep_distance_conv_v3(MessagePassing):
             heads.append(head)
 
         out = torch.cat(heads, dim=-1)
+        out = F.dropout(out, p=self.dropout, training=self.training)
         out = torch.matmul(out, self.head_weight)
-
-        # beta = torch.matmul(torch.cat([trans_x_i, trans_x_j, gamma], dim=-1), self.att_weight)
-        # # beta = ((trans_x_i * trans_x_j).sum(dim=1)/ (trans_x_i.sum(dim=1) * trans_x_j.sum(dim=1) + 1e-4)).reshape(-1,1)
-        # beta = F.leaky_relu(beta, self.negative_slope)
-        # beta = softmax(beta, edge_index_j, ptr, size_i)
-        # beta = F.dropout(beta, p=self.dropout, training=self.training)
-
-        # edge_weight = torch.matmul(torch.cat([alpha, beta], dim=-1), self.sum_weight)
-        # edge_weight = F.leaky_relu(edge_weight, self.negative_slope)
-
-        # out = torch.matmul(x_j, self.neighbor_weight) * edge_weight
 
         return out if edge_norm is None else out * edge_norm.view(-1, 1)
 
