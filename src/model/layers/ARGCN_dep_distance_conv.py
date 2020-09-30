@@ -399,8 +399,8 @@ class ARGCN_dep_distance_conv_multi_head(MessagePassing):
         gamma = gamma.reshape(-1, self.distance_emb_dim)
         # alpha = alpha + gamma
 
-        trans_x_i = torch.matmul(x_i, self.Qusetion_weight)
-        trans_x_j = torch.matmul(x_j, self.Qusetion_weight)
+        trans_x_i = torch.matmul(x_i, self.neighbor_weight)
+        trans_x_j = torch.matmul(x_j, self.neighbor_weight)
 
         trans_neighbor = torch.matmul(x_j, self.neighbor_weight)
 
