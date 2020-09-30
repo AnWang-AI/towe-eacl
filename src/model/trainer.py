@@ -33,6 +33,7 @@ parser.add_argument('--train_batch_size', type=int, default=None)
 parser.add_argument('--load_model_name', type=str, default='')
 parser.add_argument('--save_model_name', type=str, default='')
 parser.add_argument('--eval_frequency', type=int, default=5)
+parser.add_argument('--random_seed', type=int, default=999)
 args = parser.parse_args()
 
 config = Config(args.config_path)
@@ -43,8 +44,8 @@ preprocess_config = config.config_dicts['preprocess']
 model_config = config.config_dicts['model']
 
 
-def set_random_seed():
-    seed = 999
+def set_random_seed(seed = 999):
+    seed = args.random_seed
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
