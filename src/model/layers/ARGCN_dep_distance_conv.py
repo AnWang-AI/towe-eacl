@@ -136,7 +136,7 @@ class ARGCN_dep_distance_conv(MessagePassing):
         # alpha = alpha + gamma
 
         trans_x_i = torch.matmul(x_i, self.Qusetion_weight)
-        trans_x_j = torch.matmul(x_j, self.Key_weight)
+        trans_x_j = torch.matmul(x_j, self.neighbor_weight)
 
         beta = torch.matmul(torch.cat([trans_x_i, trans_x_j, gamma], dim=-1), self.att_weight)
         # beta = ((trans_x_i * trans_x_j).sum(dim=1)/ (trans_x_i.sum(dim=1) * trans_x_j.sum(dim=1) + 1e-4)).reshape(-1,1)
