@@ -33,7 +33,7 @@ parser.add_argument('--train_batch_size', type=int, default=None)
 parser.add_argument('--load_model_name', type=str, default='')
 parser.add_argument('--save_model_name', type=str, default='')
 parser.add_argument('--eval_frequency', type=int, default=5)
-parser.add_argument('--random_seed', type=int, default=999)
+parser.add_argument('--random_seed', type=int, default=1)
 args = parser.parse_args()
 
 config = Config(args.config_path)
