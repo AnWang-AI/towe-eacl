@@ -66,7 +66,10 @@ class ExtractionNet(torch.nn.Module):
             mainnet_name = self.model_config['mainnet']
             self.MainNet = eval(mainnet_name)(num_features=self.feature_dim, num_classes=self.hidden_size)
 
-            self.LSTM_input_dim = self.hidden_size + self.word_embed_dim
+            if self.have_word_emb:
+                self.LSTM_input_dim = self.hidden_size + self.word_embed_dim
+            else:
+                self.LSTM_input_dim = self.hidden_size
             self.SubNet = BiLSTMNet(num_features=self.LSTM_input_dim, num_classes=output_size,
                                      hidden_size=self.hidden_size)
 
@@ -128,7 +131,9 @@ class ExtractionNet(torch.nn.Module):
 
             x = self.MainNet(x, edge_idx, edge_type, edge_distance)
             x = x.reshape(-1, 100, self.hidden_size)
-            x = torch.cat([x, word_embedding], dim=-1)
+
+            if self.have_word_emb:
+                x = torch.cat([x, word_embedding], dim=-1)
 
             x = self.SubNet(x)
         else:
