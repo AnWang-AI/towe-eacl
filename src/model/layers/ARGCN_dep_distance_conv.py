@@ -56,8 +56,8 @@ class ARGCN_dep_distance_conv(MessagePassing):
         self.out_channels = out_channels
         self.edge_feature_dim = edge_feature_dim
 
-        self.negative_slope = 0.1
-        self.dropout = 0.6
+        self.negative_slope = 0.2
+        self.dropout = 0.5
 
         self.neighbor_weight = Param(torch.Tensor(in_channels, out_channels))
 
@@ -65,14 +65,16 @@ class ARGCN_dep_distance_conv(MessagePassing):
         self.dep_embedding = torch.nn.Embedding(num_embeddings=50, embedding_dim=self.dep_emb_dim)
         self.edge_trans1 = Param(torch.Tensor(self.dep_emb_dim, 1))
 
-        self.distance_emb_dim = 50
+        self.distance_emb_dim = 100
 
         self.distance_embedding = PositionalEmbedding(demb=self.distance_emb_dim)
         # self.distance_embedding = torch.nn.Embedding(num_embeddings=30, embedding_dim=self.distance_emb_dim)
 
         self.edge_trans2 = Param(torch.Tensor(self.distance_emb_dim, 1))
 
-        self.att_weight = Param(torch.Tensor(out_channels*2 + self.distance_emb_dim, 2))
+        self.att_dim = 5
+        self.att_weight = Param(torch.Tensor(out_channels*2 + self.distance_emb_dim, self.att_dim))
+        self.att_bias = Param(torch.Tensor(self.att_dim))
 
         if root_weight:
             self.root_weight = Param(torch.Tensor(in_channels, out_channels))
@@ -83,7 +85,7 @@ class ARGCN_dep_distance_conv(MessagePassing):
         self.Qusetion_weight = Param(torch.Tensor(in_channels, out_channels))
         self.Key_weight = Param(torch.Tensor(in_channels, out_channels))
 
-        self.sum_weight = Param(torch.Tensor(self.dep_emb_dim+2, 1))
+        self.sum_weight = Param(torch.Tensor(self.dep_emb_dim+self.att_dim, 1))
 
         if bias:
             self.bias = Param(torch.Tensor(out_channels))
@@ -103,6 +105,7 @@ class ARGCN_dep_distance_conv(MessagePassing):
         uniform(size, self.edge_trans1)
 
         uniform(size, self.att_weight)
+        uniform(size, self.att_bias)
 
         uniform(size, self.sum_weight)
 
