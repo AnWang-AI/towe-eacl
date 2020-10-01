@@ -320,7 +320,7 @@ class ARGCN_dep_distance_conv_multi_head(MessagePassing):
         self.num_heads = num_heads
 
         self.negative_slope = 0.2
-        self.dropout = 0.5
+        self.dropout = 0.2  # 0.5
 
         self.neighbor_weight = Param(torch.Tensor(in_channels, out_channels * self.num_heads))
 
