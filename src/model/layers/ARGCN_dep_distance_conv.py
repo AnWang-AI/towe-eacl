@@ -345,7 +345,7 @@ class ARGCN_dep_distance_conv_multi_head(MessagePassing):
         self.Key_weight = Param(torch.Tensor(in_channels, out_channels * self.num_heads))
 
         self.att_dim = 1
-        self.att_weight = Param(torch.Tensor(out_channels*2 + self.distance_emb_dim, self.att_dim))
+        self.att_weight = Param(torch.Tensor(out_channels*2 + self.distance_emb_dim, self.att_dim * self.num_heads))
 
         self.sum_weight = Param(torch.Tensor(self.dep_emb_dim+self.att_dim, 1))
 
@@ -389,7 +389,6 @@ class ARGCN_dep_distance_conv_multi_head(MessagePassing):
     def message(self, x_i, x_j, edge_index_j, size_i, edge_type, edge_distance, edge_norm, ptr):
 
         alpha = self.dep_embedding(edge_type)
-        # alpha = F.leaky_relu(alpha, self.negative_slope)
         alpha = alpha.reshape(-1, self.dep_emb_dim)
 
         edge_distance = edge_distance.reshape(-1).float()
@@ -411,7 +410,9 @@ class ARGCN_dep_distance_conv_multi_head(MessagePassing):
             k = trans_x_j[:, head_idx * self.out_channels:(head_idx+1) * self.out_channels]
             v = trans_neighbor[:, head_idx * self.out_channels:(head_idx+1) * self.out_channels]
 
-            beta = torch.matmul(torch.cat([q, k, gamma], dim=-1), self.att_weight)
+            attention_weight = self.att_weight[:, head_idx * self.att_dim:(head_idx+1) * self.att_dim]
+
+            beta = torch.matmul(torch.cat([q, k, gamma], dim=-1), attention_weight)
             beta = F.leaky_relu(beta, self.negative_slope)
             beta = softmax(beta, edge_index_j, ptr, size_i)
             beta = F.dropout(beta, p=self.dropout, training=self.training)
