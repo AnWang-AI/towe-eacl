@@ -7,15 +7,18 @@ from torch_geometric.utils import remove_self_loops, add_self_loops, softmax
 
 import math
 
+
 def uniform(size, tensor):
     bound = 1.0 / math.sqrt(size)
     if tensor is not None:
         tensor.data.uniform_(-bound, bound)
 
+
 def glorot(tensor):
     if tensor is not None:
         stdv = math.sqrt(6.0 / (tensor.size(-2) + tensor.size(-1)))
         tensor.data.uniform_(-stdv, stdv)
+
 
 class RGAT_conv(MessagePassing):
     """
@@ -29,6 +32,7 @@ class RGAT_conv(MessagePassing):
         **kwargs (optional): Additional arguments of
             :class:`torch_geometric.nn.conv.MessagePassing`.
     """
+
     def __init__(self, in_channels, out_channels, edge_feature_dim=2,
                  root_weight=True, bias=True, **kwargs):
         super(RGAT_conv, self).__init__(aggr='add', **kwargs)
@@ -45,16 +49,15 @@ class RGAT_conv(MessagePassing):
         self.neighbor_weight1 = Param(torch.Tensor(in_channels, out_channels))
         self.neighbor_weight2 = Param(torch.Tensor(in_channels, out_channels))
 
-
         self.dep_embedding = torch.nn.Embedding(num_embeddings=50, embedding_dim=self.dep_emb_dim)
         self.dep_lin1 = torch.nn.Linear(self.dep_emb_dim, 10)
         self.dep_lin2 = torch.nn.Linear(10, 1)
 
         # self.edge_trans1 = Param(torch.Tensor(self.dep_emb_dim, 1))
 
-        self.att_weight = Param(torch.Tensor(out_channels*2, 1))
+        self.att_weight = Param(torch.Tensor(out_channels * 2, 1))
 
-        self.fin_lin = torch.nn.Linear(out_channels*2, out_channels)
+        self.fin_lin = torch.nn.Linear(out_channels * 2, out_channels)
 
         if root_weight:
             self.root_weight = Param(torch.Tensor(in_channels, out_channels))
@@ -134,8 +137,7 @@ class RGAT_conv(MessagePassing):
         return aggr_out
 
     def __repr__(self):
-        return '{}({}, {}, num_relations={})'.format(self.__class__.__name__,
-                                                     self.in_channels,
-                                                     self.out_channels,
-                                                     self.edge_feature_dim)
-
+        return '{}({})'.format(self.__class__.__name__,
+                               self.in_channels,
+                               self.out_channels,
+                               )
