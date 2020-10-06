@@ -80,12 +80,15 @@ class Grapher():
                     distance = i-j
                     dep = [0]
                     distance_gate = self.distance_gate
+
                     if [i, j] in dep_graph_edge_idx:
                         temp = dep_graph_edge_idx.index([i, j])
                         dep = dep_graph_edge_type[temp]
                         if abs(distance) >= distance_gate:
                             distance = distance_gate if distance > 0 else -distance_gate
-                    if abs(distance) < distance_gate or dep != [0]:
+
+                    # if abs(distance) < distance_gate or dep != [0]:
+                    if abs(distance) < distance_gate:
 
                         edge_idx.append([i, j])
                         edge_type.append(dep)

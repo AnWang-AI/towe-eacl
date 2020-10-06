@@ -11,6 +11,7 @@ from transformers import BertModel
 
 from src.model.layers.ARGCN_dep_conv import ARGCN_dep_conv
 from src.model.layers.ARGCN_dep_distance_conv import ARGCN_dep_distance_conv, ARGCN_dep_distance_conv_v2, ARGCN_dep_distance_conv_multi_head
+from src.model.layers.ARGCN_distance_conv import ARGCN_distance_conv_multi_head
 from src.model.layers.RGAT_conv import RGAT_conv
 
 from src.tools.utils import init_w2v_matrix
@@ -371,8 +372,9 @@ class DeepARGCNNet(torch.nn.Module):
         self.conv_layer_list = torch.nn.ModuleList()
 
 
-        conv_layer = ARGCN_dep_distance_conv_multi_head
+        # conv_layer = ARGCN_dep_distance_conv_multi_head
         # conv_layer = RGAT_conv
+        conv_layer = ARGCN_distance_conv_multi_head
 
 
         self.hidden_dim = 128
