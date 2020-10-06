@@ -265,7 +265,6 @@ class ExtractionNet_v2(torch.nn.Module):
             edge_type = batch.edge_type
             edge_distance = batch.edge_distance
 
-            print(edge_idx)
             x = self.MainNet(x, edge_idx, edge_type, edge_distance)
             x = x.reshape(-1, 100, self.hidden_size)
             x = torch.cat([x, word_embedding], dim=-1)

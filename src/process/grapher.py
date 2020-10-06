@@ -19,7 +19,7 @@ class Grapher():
         assert type(tag_map) == dict
         self.tag_map = tag_map["tag_to_id"]
 
-        self.distance_gate = 1
+        self.distance_gate = 3
 
     def build_dep_graph_from_text(self, text):
 
@@ -87,8 +87,8 @@ class Grapher():
                         if abs(distance) >= distance_gate:
                             distance = distance_gate if distance > 0 else -distance_gate
 
-                    # if abs(distance) < distance_gate or dep != [0]:
-                    if abs(distance) < distance_gate:
+                    if abs(distance) < distance_gate or dep != [0]:
+                    # if abs(distance) < distance_gate:
 
                         edge_idx.append([i, j])
                         edge_type.append(dep)
