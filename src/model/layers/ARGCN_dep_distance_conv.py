@@ -491,8 +491,8 @@ class ARGCN_dep_distance_conv_multi_head_v2(MessagePassing):
         else:
             self.register_parameter('root', None)
 
-        self.Qusetion_weight = Param(torch.Tensor(in_channels, out_channels))
-        self.Key_weight = Param(torch.Tensor(in_channels, out_channels))
+        self.Qusetion_weight = Param(torch.Tensor(in_channels, out_channels * self.num_heads))
+        self.Key_weight = Param(torch.Tensor(in_channels, out_channels * self.num_heads))
 
         self.att_dim = 1
         self.att_weight = Param(torch.Tensor(out_channels*2 + self.distance_emb_dim, self.att_dim * self.num_heads))
@@ -557,8 +557,8 @@ class ARGCN_dep_distance_conv_multi_head_v2(MessagePassing):
 
         for head_idx in range(self.num_heads):
             head_dim = int(self.out_channels/self.num_heads)
-            q = trans_x_i[:, head_idx * head_dim:(head_idx+1) * head_dim]
-            k = trans_x_j[:, head_idx * head_dim:(head_idx+1) * head_dim]
+            q = trans_x_i[:, head_idx * self.out_channels:(head_idx+1) * self.out_channels]
+            k = trans_x_j[:, head_idx * self.out_channels:(head_idx+1) * self.out_channels]
             v = trans_neighbor[:, head_idx * head_dim:(head_idx+1) * head_dim]
 
             attention_weight = self.att_weight[:, head_idx * self.att_dim:(head_idx+1) * self.att_dim]
