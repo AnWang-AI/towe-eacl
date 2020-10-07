@@ -563,7 +563,7 @@ class ARGCN_dep_distance_conv_multi_head_v2(MessagePassing):
 
             attention_weight = self.att_weight[:, head_idx * self.att_dim:(head_idx+1) * self.att_dim]
 
-            print(q.shape,k.shape, attention_weight.shape)
+            # print(q.shape,k.shape, attention_weight.shape)
             beta = torch.matmul(torch.cat([q, k, gamma], dim=-1), attention_weight)
             beta = F.leaky_relu(beta, self.negative_slope)
             beta = softmax(beta, edge_index_j, ptr, size_i)
