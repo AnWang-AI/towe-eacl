@@ -556,7 +556,7 @@ class ARGCN_dep_distance_conv_multi_head_v2(MessagePassing):
         heads = []
 
         for head_idx in range(self.num_heads):
-            head_dim = self.out_channels/self.num_heads
+            head_dim = int(self.out_channels/self.num_heads)
             q = trans_x_i[:, head_idx * head_dim:(head_idx+1) * head_dim]
             k = trans_x_j[:, head_idx * head_dim:(head_idx+1) * head_dim]
             v = trans_neighbor[:, head_idx * head_dim:(head_idx+1) * head_dim]
