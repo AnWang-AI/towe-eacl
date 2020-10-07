@@ -372,9 +372,9 @@ class DeepARGCNNet(torch.nn.Module):
         self.conv_layer_list = torch.nn.ModuleList()
 
 
-        # conv_layer = ARGCN_dep_distance_conv_multi_head
+        conv_layer = ARGCN_dep_distance_conv_multi_head
         # conv_layer = RGAT_conv
-        conv_layer = ARGCN_distance_conv_multi_head
+        # conv_layer = ARGCN_distance_conv_multi_head
 
 
         self.hidden_dim = 128
