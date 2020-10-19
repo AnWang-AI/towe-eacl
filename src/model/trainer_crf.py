@@ -441,7 +441,7 @@ if __name__ == "__main__":
         word_embed_dim = 300
         word_emb_mode = "w2v"
 
-    model_name = model_config['model']
+    model_name = "ExtractionNet_v2"
     model = eval(model_name)(word_embed_dim=word_embed_dim,
                              output_size=num_class,
                              config_dicts=config_dict,
