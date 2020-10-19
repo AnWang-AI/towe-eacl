@@ -6,7 +6,9 @@ class LinearCRF(torch.nn.Module):
         torch.nn.Module.__init__(self)
 
         self.transitions = torch.nn.Parameter(torch.FloatTensor(num_labels, num_labels))
-        torch.nn.init.xavier_uniform_(self.transitions, gain=0.2)
+        # torch.nn.init.xavier_uniform_(self.transitions, gain=0.2)
+        self.tag_embedding.weight = torch.nn.Parameter(torch.eye(4), requires_grad=True)
+
 
     def score_sentence(self, features, tags, mask=None):
         """计算给定目标标注序列的分数（分子项）
