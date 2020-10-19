@@ -280,7 +280,7 @@ class Trainer():
                 # print(labels.shape)
 
                 # batch_loss = self.criterion(scores, labels)
-                batch_loss = self.compute_loss(input=scores, target=labels)
+                batch_loss = self.model.compute_loss(input=scores, target=labels)
 
                 # zero the parameter gradients
                 self.optimizer.zero_grad()
