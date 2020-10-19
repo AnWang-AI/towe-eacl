@@ -93,7 +93,7 @@ def load_data(data_path, train_batch_size=1, val_batch_size=1, use_bert=False, b
         if flag == 0:
             continue
         new_dataset.append(datas)
-    train_dataset = train_dataset + new_dataset*5
+    train_dataset = train_dataset + new_dataset*2
 
 
     train_loader = DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True)
