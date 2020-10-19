@@ -298,6 +298,7 @@ class Trainer():
 
                 # conbine result of epoch to eval
                 ys.append(labels)
+                print(self.model.crf._viterbi_decode(unsqueeze_scores))
                 preds.append(self.model.crf._viterbi_decode(unsqueeze_scores))
 
                 # Count loss and accuracy
