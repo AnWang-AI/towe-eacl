@@ -175,10 +175,17 @@ class Trainer():
                 labels = labels.view(-1)
 
                 # Calculate loss.
-                batch_loss = self.criterion(scores, labels)
+                unsqueeze_scores = scores.unsqueeze(1)
+                unsqueeze_labels = labels.unsqueeze(1)
+                # print(unsqueeze_scores.shape)
+                # print(unsqueeze_labels.shape)
+
+                # batch_loss = self.criterion(scores, labels)
+                batch_loss = self.model.crf.neg_log_likelihood(input=unsqueeze_scores, target=unsqueeze_labels)
+
                 # conbine result of epoch to eval
                 ys.append(labels)
-                preds.append(torch.argmax(scores, dim=1))
+                preds.append(self.model.crf._viterbi_decode(unsqueeze_scores).squeeze())
                 # Count loss and correct.
                 total_loss += batch_loss
 
