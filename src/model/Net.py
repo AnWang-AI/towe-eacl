@@ -13,6 +13,7 @@ from src.model.layers.ARGCN_dep_conv import ARGCN_dep_conv
 from src.model.layers.ARGCN_dep_distance_conv import ARGCN_dep_distance_conv, ARGCN_dep_distance_conv_v2, ARGCN_dep_distance_conv_multi_head, ARGCN_dep_distance_conv_multi_head_v2
 from src.model.layers.ARGCN_distance_conv import ARGCN_distance_conv_multi_head
 from src.model.layers.RGAT_conv import RGAT_conv
+from src.model.LSTM_CRF import LinearCRF
 
 from src.tools.utils import init_w2v_matrix
 
@@ -213,6 +214,8 @@ class ExtractionNet_v2(torch.nn.Module):
             self.MainNet = BiLSTMNet(num_features=self.feature_dim, num_classes=output_size,
                                      hidden_size=self.hidden_size)
 
+        self.crf = LinearCRF(num_labels=output_size)
+
         self.init_weight()
 
     def init_weight(self):
@@ -274,7 +277,8 @@ class ExtractionNet_v2(torch.nn.Module):
             # x shape: [batch size, time step, embed dim]
             x = self.MainNet(x)
 
-        output = F.log_softmax(x, dim=-1)
+        output = x
+        # output = F.log_softmax(x, dim=-1)
 
         return output
 

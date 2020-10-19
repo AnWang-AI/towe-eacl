@@ -14,32 +14,45 @@ from torch_geometric.nn import GATConv
 
 from src.process.processer import Processer
 from src.process.Dataset import TOWEDataset, TOWEDataset_with_bert, TOWEDataset_with_graph, TOWEDataset_with_graph_with_bert
-from src.model.Net import ExtractionNet
-from src.model.LSTM_CRF import BiLSTM_CRF
+from src.model.Net import ExtractionNet, ExtractionNet_v2
 
 from src.tools.utils import MultiFocalLoss, tprint
 from src.tools.TOWE_utils import score_BIO
+
+from src.model.ConfigParser import Config
 
 sys.path.append('./')
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--data_path', type=str, default='/home/intsig/PycharmProject/TOWE-EACL/data/14res')
-parser.add_argument('--epochs', type=int, default=30)
-parser.add_argument('--train_batch_size', type=int, default=2)
-parser.add_argument('--val_batch_size', type=int, default=2)
+parser.add_argument('--config_path', type=str, default='./src/model/conf_bert_gnn_lstm.ini')
+parser.add_argument('--data_path', type=str, default='')
+parser.add_argument('--epochs', type=int, default=None)
+parser.add_argument('--train_batch_size', type=int, default=None)
 parser.add_argument('--load_model_name', type=str, default='')
-parser.add_argument('--save_model_name', type=str, default='models/EdgeNet_model.ckpt')
-parser.add_argument('--train_log', type=str, default='log/train_log')
-parser.add_argument('--val_log', type=str, default='log/val_log')
+parser.add_argument('--save_model_name', type=str, default='')
 parser.add_argument('--eval_frequency', type=int, default=5)
-parser.add_argument('--use_bert', action='store_true')
-parser.add_argument('--build_graph', action='store_true')
-parser.add_argument('--model', type=str, default='Tag_BiLSTM')
-parser.add_argument('--loss', type=str, default='CrossEntropy')
-parser.add_argument('--cuda', action='store_true')
+parser.add_argument('--random_seed', type=int, default=1)
 args = parser.parse_args()
+
+config = Config(args.config_path)
+config.reset_config(args)
+config_dict = config.config_dicts
+default_config = config.config_dicts['default']
+preprocess_config = config.config_dicts['preprocess']
+model_config = config.config_dicts['model']
+
+
+def set_random_seed(seed = 999):
+    seed = args.random_seed
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.enable = False
 
 
 def load_data(data_path, train_batch_size=1, val_batch_size=1, use_bert=False, build_graph=False):
@@ -67,6 +80,22 @@ def load_data(data_path, train_batch_size=1, val_batch_size=1, use_bert=False, b
             val_dataset = TOWEDataset(data_path, 'valid')
             test_dataset = TOWEDataset(data_path, 'test')
 
+    #
+    new_dataset = []
+    for datas in train_dataset:
+        value_type = datas.opinion.long()
+
+        need_labels = [2]
+        flag = 0
+        for need_label in need_labels:
+            if need_label in value_type:
+                flag = 1
+        if flag == 0:
+            continue
+        new_dataset.append(datas)
+    train_dataset = train_dataset + new_dataset*2
+
+
     train_loader = DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=train_batch_size, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=val_batch_size, shuffle=False)
@@ -78,12 +107,17 @@ def load_data(data_path, train_batch_size=1, val_batch_size=1, use_bert=False, b
 
 class Trainer():
 
-    def __init__(self, loader, model, optimizer, args):
+    def __init__(self, loader, model, criterion, optimizer, args, config):
+        self.args = args
+        self.config = config
+        self.default_config = config.config_dicts['default']
+        self.preprocess_config = config.config_dicts['preprocess']
+        self.model_config = config.config_dicts['model']
+        self.cuda = True if torch.cuda.is_available() and self.model_config['cuda'] else False
         self.train_loader, self.val_loader, self.test_loader = loader['train'], loader['valid'], loader['test']
         self.model = model.to(device)
+        self.criterion = criterion.to(device)
         self.optimizer = optimizer
-        self.cuda = True if torch.cuda.is_available() and args.cuda else False
-        self.args = args
 
     def eval(self, detail=False, dataset="valid"):
         # Transfer model mode from train to eval.
@@ -155,20 +189,20 @@ class Trainer():
         ie_score, ie_precision, ie_recall = self.IE_score(y, pred)
 
         # Print train info.
-        info = 'loss: {:.3f}, IE precision: {:.3f}, IE recall: {:.3f}, IE f1: {:.3f}'.format(loss,
+        info = 'loss: {:.4f}, IE precision: {:.4f}, IE recall: {:.4f}, IE f1: {:.4f}'.format(loss,
                                                                                            ie_precision, ie_recall, ie_score)
-        tprint(info)
+        # tprint(info)
 
         pred_list = [pred.tolist() for pred in preds]
         label_list = [y.tolist() for y in ys]
         score_dict = score_BIO(pred_list, label_list, ignore_index=3)
         BIO_score = score_dict["f1"]
-        BIO_info = 'BIO precision: {:.3f}, BIO recall: {:.3f}, BIO f1: {:.3f}'.format(score_dict["precision"],
+        BIO_info = 'BIO precision: {:.4f}, BIO recall: {:.4f}, BIO f1: {:.4f}'.format(score_dict["precision"],
                                                                                       score_dict["recall"],
                                                                                       score_dict["f1"])
         tprint(BIO_info)
         # Save train info to log file.
-        self.save_log(BIO_info, self.args.val_log)
+        self.save_log(BIO_info, self.model_config['val_log'])
 
 
         print('-' * 40)
@@ -186,12 +220,12 @@ class Trainer():
 
         total_num = len(self.train_loader)
 
-        for i in range(self.args.epochs):
+        for i in range(self.model_config['epochs']):
             epoch_index = i + 1
 
             # 调整学习率以便开启bert的训练
             trian_bert = False
-            if args.use_bert:  ## 使用bert的时候
+            if self.default_config['use_bert']:  ## 使用bert的时候
                 start_to_train_bert_epoch = 10
                 if i >= start_to_train_bert_epoch:
                     for param_group in self.optimizer.param_groups:
@@ -199,11 +233,11 @@ class Trainer():
                     trian_bert = True
                 else:
                     trian_bert = False
-            # else:   ## 不适用bert的是偶
-            #     start_to_train_word_emb = 15
+            # else:   ## 不适用bert的时候
+            #     start_to_train_word_emb = 40
             #     if i > start_to_train_word_emb:
             #         for param_group in self.optimizer.param_groups:
-            #             param_group['lr'] = 5e-5
+            #             param_group['lr'] = 1e-5
             #         self.model.word_embed.weight.requires_grad = True
 
 
@@ -225,8 +259,9 @@ class Trainer():
                 labels = all_opinion
 
                 # Forward pass.
-                scores, _ = self.model(all_input_ids)
-                batch_loss = self.model.neg_log_likelihood(all_input_ids, all_opinion)
+
+                scores = self.model(datas, trian_bert)
+
 
                 scores = scores.cpu()
                 scores = torch.masked_select(scores.reshape(-1, 100, num_class), all_mask.reshape(-1, 100, 1).expand(-1, 100, num_class)>0)
@@ -244,17 +279,24 @@ class Trainer():
                 # print(scores.shape)
                 # print(labels.shape)
 
+                # batch_loss = self.criterion(scores, labels)
+                batch_loss = self.compute_loss(input=scores, target=labels)
+
                 # zero the parameter gradients
                 self.optimizer.zero_grad()
 
                 # Backward pass.
                 batch_loss.backward()
+
+                # for name, parms in model.named_parameters():
+                #     print("name", name, "grad", parms.grad)
+
                 # Update parameters.
                 self.optimizer.step()
 
                 # conbine result of epoch to eval
                 ys.append(labels)
-                preds.append(torch.argmax(scores, dim=1))
+                preds.append(self.model._viterbi_decode(scores))
 
                 # Count loss and accuracy
                 total_loss += batch_loss
@@ -264,38 +306,39 @@ class Trainer():
             # Epoch average loss and accuracy.
             loss = total_loss / total_num
 
-            accuracy = self.metric_f1_score(y, pred, detail=False)
+            # accuracy = self.metric_f1_score(y, pred, detail=False)
 
             ie_score, ie_precision, ie_recall = self.IE_score(y, pred)
 
             # Print train info.
-            info = 'Train: Epoch: {}, loss: {:.3f}, IE precision: {:.3f}, IE recall: {:.3f}, IE f1: {:.3f}'.format(epoch_index, loss,
+            info = 'Train: Epoch: {}, loss: {:.4f}, IE precision: {:.4f}, IE recall: {:.4f}, IE f1: {:.4f}'.format(epoch_index, loss,
                                                                                                  ie_precision,
                                                                                                  ie_recall, ie_score)
-            tprint(info)
+            # tprint(info)
 
             pred_list = [pred.tolist() for pred in preds]
             label_list = [y.tolist() for y in ys]
             score_dict = score_BIO(pred_list, label_list, ignore_index=3)
-            BIO_info = 'Train: BIO precision: {:.3f}, BIO recall: {:.3f}, BIO f1: {:.3f}'.format(score_dict["precision"],
+            BIO_info = 'Epoch: {} Train: loss: {:.4f} BIO precision: {:.4f}, BIO recall: {:.4f}, BIO f1: {:.4f}'.format(epoch_index, loss, score_dict["precision"],
                                                                                           score_dict["recall"],
                                                                                           score_dict["f1"])
             tprint(BIO_info)
 
             # Save train info to log file.
-            self.save_log(BIO_info, self.args.train_log)
+            self.save_log(BIO_info, self.model_config['train_log'])
 
             # Eval every {eval_frequency} train epoch
             if epoch_index % self.args.eval_frequency == 0:
                 eval_score = self.eval(detail=False, dataset="valid")
-                self.eval(detail=True, dataset="test")
+                self.eval(detail=False, dataset="test")
                 # Save best model
                 if eval_score > best_accuracy:
-                    tprint('Best model so far, best eval_score {:.3f} -> {:.3f}'.format(best_accuracy, eval_score))
+                    tprint('Best model so far, best eval_score {:.4f} -> {:.4f}'.format(best_accuracy, eval_score))
                     best_accuracy = eval_score
                     self.save_model(epoch_index, loss, eval_score, self.args.save_model_name)
 
-        self.load_model(model_path=self.args.save_model_name)
+        self.config.print_config()
+        self.load_model(model_path=self.model_config['save_model_name'])
         self.eval(detail=True, dataset="test")
 
     def metric_f1_score(self, y, pred, detail=False):
@@ -369,7 +412,7 @@ class Trainer():
             epoch = ckpt['epoch']
             loss = ckpt['loss']
             best_accuracy = ckpt['best_accuracy']
-            tprint('Load successful! model saved at {} epoch, best accuracy: {:.3f}, loss: {:.3f}'.format(epoch, best_accuracy,
+            tprint('Load successful! model saved at {} epoch, best accuracy: {:.4f}, loss: {:.4f}'.format(epoch, best_accuracy,
                                                                                                          loss))
         else:
             tprint('Train from beginning ...')
@@ -383,14 +426,41 @@ if __name__ == "__main__":
 
     num_class = 4
 
-    loader = load_data(args.data_path, args.train_batch_size, args.val_batch_size, args.use_bert, args.build_graph)
+    set_random_seed()
 
-    model = BiLSTM_CRF(embedding_dim=300)
+    loader = load_data(preprocess_config['data_path'],
+                       model_config['train_batch_size'],
+                       model_config['val_batch_size'],
+                       default_config['use_bert'],
+                       default_config['build_graph'])
+
+    if default_config['use_bert']:
+        word_embed_dim = 768
+        word_emb_mode = "bert"
+    else:
+        word_embed_dim = 300
+        word_emb_mode = "w2v"
+
+    model_name = model_config['model']
+    model = eval(model_name)(word_embed_dim=word_embed_dim,
+                             output_size=num_class,
+                             config_dicts=config_dict,
+                             word_emb_mode=word_emb_mode,
+                             graph_mode=default_config['build_graph'])
 
     print(model)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
+    config.print_config()
 
-    trainer = Trainer(loader, model, optimizer, args)
+    assert model_config['loss'] in ["CrossEntropy", "FacalLoss"]
+    if model_config['loss'] == "CrossEntropy":
+        # loss_op = torch.nn.CrossEntropyLoss()
+        loss_op = torch.nn.NLLLoss()
+    else:
+        loss_op = MultiFocalLoss(num_class=num_class, gamma=2)
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=0)
+
+    trainer = Trainer(loader, model, loss_op, optimizer, args, config)
     trainer.load_model()
     trainer.train()

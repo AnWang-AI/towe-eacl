@@ -1,196 +1,170 @@
 import torch
-import torch.nn as nn
-import torch.optim as optim
-START_TAG = "<START>"
-STOP_TAG = "<STOP>"
-EMBEDDING_DIM = 5
-HIDDEN_DIM = 4
-# torch.manual_seed(1)
 
-def prepare_sequence(seq, to_ix):
-    idxs = [to_ix[w] for w in seq]
-    return torch.tensor(idxs, dtype=torch.long)
+class LinearCRF(torch.nn.Module):
 
-class BiLSTM_CRF(nn.Module):
+    def __init__(self, num_labels):
+        torch.nn.Module.__init__(self)
 
-    def __init__(self, vocab_size, tag_to_ix, embedding_dim, hidden_dim):
-        super(BiLSTM_CRF, self).__init__()
-        self.embedding_dim = embedding_dim
-        self.hidden_dim = hidden_dim
-        self.vocab_size = vocab_size
-        self.tag_to_ix = tag_to_ix
-        self.tagset_size = len(tag_to_ix)
+        self.transitions = torch.nn.Parameter(torch.FloatTensor(num_labels, num_labels))
+        torch.nn.init.xavier_uniform_(self.transitions, gain=0.2)
 
-        self.word_embeds = nn.Embedding(vocab_size, embedding_dim)
-        self.lstm = nn.LSTM(embedding_dim, hidden_dim // 2,
-                            num_layers=1, bidirectional=True)
+    def score_sentence(self, features, tags, mask=None):
+        """计算给定目标标注序列的分数（分子项）
+        mask (batch_size, seq_len): the non-zero positions will be ignored
+        """
+        # 计算emission scores
+        # [batch_size, max_seq_len]
+        emission_scores = torch.gather(features, dim=2, index=tags.unsqueeze(2)).squeeze(2)
+        if mask is not None:
+            emission_scores *= (1. - mask.to(features))
+        emission_scores = torch.sum(emission_scores, dim=1)
 
-        # Maps the output of the LSTM into tag space.
-        self.hidden2tag = nn.Linear(hidden_dim, self.tagset_size)
+        # 计算transition scores
+        # 标签可转移数量等于序列长度减一, transitions[i, j]表示从标签i -> j的概率
+        transition_scores = self.transitions[tags[:, :-1], tags[:, 1:]]
+        if mask is not None:
+            transition_scores *= (1. - mask[:, 1:].to(features))
+        transition_scores = torch.sum(transition_scores, dim=1)
 
-        # Matrix of transition parameters.  Entry i,j is the score of
-        # transitioning *to* i *from* j.
-        self.transitions = nn.Parameter(
-            torch.randn(self.tagset_size, self.tagset_size))
+        scores = emission_scores + transition_scores
+        return scores
 
-        # These two statements enforce the constraint that we never transfer
-        # to the start tag and we never transfer from the stop tag
-        self.transitions.data[tag_to_ix[START_TAG], :] = -10000
-        self.transitions.data[:, tag_to_ix[STOP_TAG]] = -10000
+    def forward_alg(self, features):
+        """计算所有标注序列分数和（归一化分母项）"""
+        # [seq_len, batch_size, num_tags]
+        # 计算initial state
+        forward_var = features[:, 0, :]
+        for i in range(1, features.shape[1]):
+            feature = features[:, i, :]
+            # [batch_size, num_tags, num_tags]
+            scores = forward_var.unsqueeze(2) + self.transitions + feature.unsqueeze(1)
+            forward_var = torch.logsumexp(scores, dim=1)
 
-        self.hidden = self.init_hidden()
+        # [batch_size]
+        log_norm = torch.logsumexp(forward_var, dim=1)
 
-    def init_hidden(self):
-        return (torch.randn(2, 1, self.hidden_dim // 2),
-                torch.randn(2, 1, self.hidden_dim // 2))
+        return log_norm
 
-    def _forward_alg(self, feats):
-        # Do the forward algorithm to compute the partition function
-        init_alphas = torch.full([self.tagset_size], -10000.)
-        # START_TAG has all of the score.
-        init_alphas[self.tag_to_ix[START_TAG]] = 0.
+    def neg_log_likelihood(self, input, target, mask=None, reduction="mean", weight=None):
+        """Negative log likelihood as CRF loss"""
+        if weight is not None:
+            input *= weight
 
-        # Wrap in a variable so that we will get automatic backprop
-        # Iterate through the sentence
-        forward_var_list=[]
-        forward_var_list.append(init_alphas)
-        for feat_index in range(feats.shape[0]):
-            gamar_r_l = torch.stack([forward_var_list[feat_index]] * feats.shape[1])
-            t_r1_k = torch.unsqueeze(feats[feat_index],0).transpose(0,1)
-            aa = gamar_r_l + t_r1_k + self.transitions
-            forward_var_list.append(torch.logsumexp(aa,dim=1))
-        terminal_var = forward_var_list[-1] + self.transitions[self.tag_to_ix[STOP_TAG]]
-        terminal_var = torch.unsqueeze(terminal_var,0)
-        alpha = torch.logsumexp(terminal_var, dim=1)[0]
-        return alpha
+        gold_score = self.score_sentence(features=input, tags=target, mask=mask)
+        forward_score = self.forward_alg(features=input)
+        neg_log_likelihood = forward_score - gold_score
 
-    def _get_lstm_features(self, sentence):
-        self.hidden = self.init_hidden()
-        embeds = self.word_embeds(sentence).view(len(sentence), 1, -1)
-        lstm_out, self.hidden = self.lstm(embeds, self.hidden)
-        lstm_out = lstm_out.view(len(sentence), self.hidden_dim)
-        lstm_feats = self.hidden2tag(lstm_out)
-        return lstm_feats
+        if reduction == "mean":
+            return neg_log_likelihood.mean()
 
-    def _score_sentence(self, feats, tags):
-        # Gives the score of a provided tag sequence
-        score = torch.zeros(1)
-        tags = torch.cat([torch.tensor([self.tag_to_ix[START_TAG]], dtype=torch.long), tags])
-        for i, feat in enumerate(feats):
-            score = score + \
-                self.transitions[tags[i + 1], tags[i]] + feat[tags[i + 1]]
-        score = score + self.transitions[self.tag_to_ix[STOP_TAG], tags[-1]]
-        return score
+        return neg_log_likelihood
 
-    def _viterbi_decode(self, feats):
+    @torch.no_grad()
+    def _viterbi_decode(self, features):
+        """Decoding sequence tagging by viterbi algorithm"""
+        # 动态规划之前向算法求解最优分数
+        features = features.permute(1, 0, 2)
+        forward_var = features[0]
+
         backpointers = []
-        # Initialize the viterbi variables in log space
-        init_vvars = torch.full((1, self.tagset_size), -10000.)
-        init_vvars[0][self.tag_to_ix[START_TAG]] = 0
+        for feature in features[1:]:
+            # [batch_size, num_tags, num_tags]
+            forward_scores = forward_var.unsqueeze(2) + self.transitions
+            # [batch_size, 1, num_tags]
+            max_indices = forward_scores.argmax(1, keepdim=True)
+            # [batch_size, num_tags]
+            max_scores = forward_scores.gather(1, max_indices).squeeze(1)
+            forward_var = feature + max_scores
 
-        # forward_var at step i holds the viterbi variables for step i-1
-        forward_var_list = []
-        forward_var_list.append(init_vvars)
+            backpointers.append(max_indices.squeeze(1))
 
-        for feat_index in range(feats.shape[0]):
-            gamar_r_l = torch.stack([forward_var_list[feat_index]] * feats.shape[1])
-            gamar_r_l = torch.squeeze(gamar_r_l)
-            next_tag_var = gamar_r_l + self.transitions
-            viterbivars_t,bptrs_t = torch.max(next_tag_var,dim=1)
+        # 后向求解最优路径
+        # [batch_size]
+        backward_indices = forward_var.argmax(1, keepdim=True)
+        best_score = forward_var.gather(1, backward_indices).squeeze(1)
 
-            t_r1_k = torch.unsqueeze(feats[feat_index], 0)
-            forward_var_new = torch.unsqueeze(viterbivars_t,0) + t_r1_k
+        best_path = [backward_indices]
+        for max_indices in reversed(backpointers):
+            # [batch_size]
+            backward_indices = max_indices.gather(1, backward_indices)
+            best_path.append(backward_indices)
+        best_path = torch.cat(best_path, dim=1).flip(1)
 
-            forward_var_list.append(forward_var_new)
-            backpointers.append(bptrs_t.tolist())
+        return best_path
 
-        # Transition to STOP_TAG
-        terminal_var = forward_var_list[-1] + self.transitions[self.tag_to_ix[STOP_TAG]]
-        best_tag_id = torch.argmax(terminal_var).tolist()
-        path_score = terminal_var[0][best_tag_id]
-
-        # Follow the back pointers to decode the best path.
-        best_path = [best_tag_id]
-        for bptrs_t in reversed(backpointers):
-            best_tag_id = bptrs_t[best_tag_id]
-            best_path.append(best_tag_id)
-        # Pop off the start tag (we dont want to return that to the caller)
-        start = best_path.pop()
-        assert start == self.tag_to_ix[START_TAG]  # Sanity check
-        best_path.reverse()
-        return path_score, best_path
+    def forward(self, features):
+        return self._viterbi_decode(features)
 
 
-    def neg_log_likelihood(self, sentence, tags):
-        feats = self._get_lstm_features(sentence)
-        forward_score = self._forward_alg(feats)
-        gold_score = self._score_sentence(feats, tags)
-        return forward_score - gold_score
+class XLNetTaggingModel(torch.nn.Module):
 
-    def forward(self, sentence):  # dont confuse this with _forward_alg above.
-        # Get the emission scores from the BiLSTM
-        lstm_feats = self._get_lstm_features(sentence)
+    def __init__(self, embed, hidden_size, num_labels, class_weight=None, dropout_rate=0.1, ignore_index=-100,
+                 use_crf=True):
+        torch.nn.Module.__init__(self)
+        self.pretrained_model = embed
+        self.memories = None
+        self.num_labels = num_labels
+        self.ignore_index = ignore_index
 
-        # Find the best path, given the features.
-        score, tag_seq = self._viterbi_decode(lstm_feats)
-        return score, tag_seq
+        self.ff_output = torch.nn.Linear(hidden_size, num_labels, bias=False)
+        self.ff_dropout = torch.nn.Dropout(dropout_rate)
 
+        if class_weight is not None:
+            self.register_buffer("class_weight", class_weight)
 
-if __name__== '__main__':
-    START_TAG = "<START>"
-    STOP_TAG = "<STOP>"
-    EMBEDDING_DIM = 300
-    HIDDEN_DIM = 256
+        self.use_crf = use_crf
+        self.crf = LinearCRF(num_labels=num_labels) if self.use_crf else None
 
-    # Make up some training data
-    training_data = [(
-        "the wall street journal reported today that apple corporation made money".split(),
-        "B I I I O O O B I O O".split()
-    ), (
-        "georgia tech is a university in georgia".split(),
-        "B I O O O O B".split()
-    )]
+    def compute_loss(self, input, target):
+        if self.use_crf:
+            return self.crf.neg_log_likelihood(
+                input=input,
+                target=target,
+                reduction="mean",
+                weight=self.class_weight)
+        else:
+            return torch.nn.functional.cross_entropy(
+                input=input.view(-1, input.shape[2]),
+                target=target.flatten(),
+                weight=self.class_weight,
+                ignore_index=self.ignore_index,
+                reduction="mean")
 
-    word_to_ix = {}
-    for sentence, tags in training_data:
-        for word in sentence:
-            if word not in word_to_ix:
-                word_to_ix[word] = len(word_to_ix)
+    def forward(
+            self,
+            input_ids=None,
+            attention_mask=None,
+            mems=None,
+            token_type_ids=None,
+            input_mask=None,
+            use_cache=True,
+            label_ids=None
+    ):
+        # pretrained model outputs
+        pretrained_output = self.pretrained_model(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            mems=mems or self.memories,
+            token_type_ids=token_type_ids,
+            input_mask=input_mask,
+            use_cache=use_cache)
 
-    tag_to_ix = {"B": 0, "I": 1, "O": 2, START_TAG: 3, STOP_TAG: 4}
+        if len(pretrained_output) > 1:
+            self.memories = pretrained_output[1]
 
-    model = BiLSTM_CRF(len(word_to_ix), tag_to_ix, EMBEDDING_DIM, HIDDEN_DIM)
-    optimizer = optim.SGD(model.parameters(), lr=0.01, weight_decay=1e-4)
+        x = self.ff_dropout(pretrained_output[0])
+        x = self.ff_output(x)
 
-    # Check predictions before training
-    with torch.no_grad():
-        precheck_sent = prepare_sequence(training_data[0][0], word_to_ix)
-        precheck_tags = torch.tensor([tag_to_ix[t] for t in training_data[0][1]], dtype=torch.long)
-        print(model(precheck_sent))
+        if label_ids is None:
+            # decoding outputs, viterbi for crf and greed argmax for cross entropy.
+            # output: [batch_size, seq_len, num_labels]
+            if self.use_crf:
+                pred_label_ids, pred_scores = self.crf(x)
+            else:
+                pred_label_ids = torch.argmax(x, dim=2)
+            output = (pred_label_ids, x)
+        else:
+            loss = self.compute_loss(input=x, target=label_ids)
+            output = (loss, x)
 
-    # Make sure prepare_sequence from earlier in the LSTM section is loaded
-    for epoch in range(
-            300):  # again, normally you would NOT do 300 epochs, it is toy data
-        for sentence, tags in training_data:
-            # Step 1. Remember that Pytorch accumulates gradients.
-            # We need to clear them out before each instance
-            model.zero_grad()
-
-            # Step 2. Get our inputs ready for the network, that is,
-            # turn them into Tensors of word indices.
-            sentence_in = prepare_sequence(sentence, word_to_ix)
-            targets = torch.tensor([tag_to_ix[t] for t in tags], dtype=torch.long)
-
-            # Step 3. Run our forward pass.
-            loss = model.neg_log_likelihood(sentence_in, targets)
-
-            # Step 4. Compute the loss, gradients, and update the parameters by
-            # calling optimizer.step()
-            loss.backward()
-            optimizer.step()
-
-    # Check predictions after training
-    with torch.no_grad():
-        precheck_sent = prepare_sequence(training_data[0][0], word_to_ix)
-        print(model(precheck_sent))
-        # We got it!
+        return output
