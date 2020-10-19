@@ -280,7 +280,7 @@ class Trainer():
                 # print(labels.shape)
 
                 # batch_loss = self.criterion(scores, labels)
-                batch_loss = self.model.compute_loss(input=scores, target=labels)
+                batch_loss = self.model.crf.compute_loss(input=scores, target=labels)
 
                 # zero the parameter gradients
                 self.optimizer.zero_grad()
@@ -296,7 +296,7 @@ class Trainer():
 
                 # conbine result of epoch to eval
                 ys.append(labels)
-                preds.append(self.model._viterbi_decode(scores))
+                preds.append(self.model.crf._viterbi_decode(scores))
 
                 # Count loss and accuracy
                 total_loss += batch_loss
