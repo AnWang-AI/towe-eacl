@@ -438,7 +438,7 @@ class Trainer():
 
 if __name__ == "__main__":
 
-    num_class = 3
+    num_class = 4
 
     set_random_seed()
 
