@@ -7,13 +7,11 @@ export PYTHONPATH=./
 
 # LSTM
 CUDA_VISIBLE_DEVICES=1 python src/model/trainer.py \
+--config_path ./src/model/config/conf_lstm.ini \
 --data_path ./data/14res \
 --save_model_name models/Model_Tag_BiLSTM.ckpt \
---model Tag_BiLSTM \
---loss CrossEntropy \
---epoch 20 --train_batch_size 32 --val_batch_size 32 \
---eval_frequency 1 \
---cuda
+--epoch 20 --train_batch_size 32 \
+--eval_frequency 2 \
 
 # bert LSTM
 CUDA_VISIBLE_DEVICES=2 python src/model/trainer.py \
