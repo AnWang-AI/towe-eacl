@@ -276,8 +276,8 @@ class Trainer():
 
                 labels = labels.view(-1)
 
-                # print(scores.shape)
-                # print(labels.shape)
+                print(scores.shape)
+                print(labels.shape)
 
                 # batch_loss = self.criterion(scores, labels)
                 batch_loss = self.model.crf.neg_log_likelihood(input=scores, target=labels)
