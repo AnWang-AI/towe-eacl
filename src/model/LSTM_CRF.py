@@ -54,9 +54,9 @@ class LinearCRF(torch.nn.Module):
             input *= weight
 
         gold_score = self.score_sentence(features=input, tags=target, mask=mask)
-        print(111111, gold_score)
+        print(111111, gold_score, gold_score.shape)
         forward_score = self.forward_alg(features=input)
-        print(222222, forward_score)
+        print(222222, forward_score, forward_score.shape)
         neg_log_likelihood = forward_score - gold_score
 
         if reduction == "mean":
