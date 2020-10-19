@@ -336,7 +336,7 @@ class Trainer():
                                                                                           score_dict["f1"])
             tprint(BIO_info)
             print(self.model.crf.transitions)
-            print(scores)
+            # print(scores)
 
             # Save train info to log file.
             self.save_log(BIO_info, self.model_config['train_log'])
