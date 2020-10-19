@@ -208,7 +208,6 @@ class Trainer():
                                                                                       score_dict["recall"],
                                                                                       score_dict["f1"])
         tprint(BIO_info)
-        print(self.model.crf.transitions)
         # Save train info to log file.
         self.save_log(BIO_info, self.model_config['val_log'])
 
@@ -334,6 +333,7 @@ class Trainer():
                                                                                           score_dict["recall"],
                                                                                           score_dict["f1"])
             tprint(BIO_info)
+            print(self.model.crf.transitions)
 
             # Save train info to log file.
             self.save_log(BIO_info, self.model_config['train_log'])
