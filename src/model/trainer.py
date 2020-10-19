@@ -271,8 +271,8 @@ class Trainer():
                 # Backward pass.
                 batch_loss.backward()
 
-                for name, parms in model.named_parameters():
-                    print("name", name, "grad", parms.grad)
+                # for name, parms in model.named_parameters():
+                #     print("name", name, "grad", parms.grad)
 
                 # Update parameters.
                 self.optimizer.step()
