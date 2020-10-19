@@ -7,7 +7,7 @@ class LinearCRF(torch.nn.Module):
 
         self.transitions = torch.nn.Parameter(torch.FloatTensor(num_labels, num_labels))
         # torch.nn.init.xavier_uniform_(self.transitions, gain=0.2)
-        self.tag_embedding.weight = torch.nn.Parameter(torch.eye(4), requires_grad=True)
+        self.transitions = torch.nn.Parameter(torch.eye(4), requires_grad=True)
 
 
     def score_sentence(self, features, tags, mask=None):
