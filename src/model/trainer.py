@@ -80,6 +80,22 @@ def load_data(data_path, train_batch_size=1, val_batch_size=1, use_bert=False, b
             val_dataset = TOWEDataset(data_path, 'valid')
             test_dataset = TOWEDataset(data_path, 'test')
 
+    #
+    new_dataset = []
+    for datas in train_dataset:
+        value_type = datas.opinion.long()
+
+        need_labels = [2]
+        flag = 0
+        for need_label in need_labels:
+            if need_label in value_type:
+                flag = 1
+        if flag == 0:
+            continue
+        new_dataset.append(datas)
+    train_dataset = train_dataset + new_dataset*5
+
+
     train_loader = DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=train_batch_size, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=val_batch_size, shuffle=False)
