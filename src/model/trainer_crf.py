@@ -278,8 +278,8 @@ class Trainer():
 
                 unsqueeze_scores = scores.unsqueeze(1)
                 unsqueeze_labels = labels.unsqueeze(1)
-                print(unsqueeze_scores.shape)
-                print(unsqueeze_labels.shape)
+                # print(unsqueeze_scores.shape)
+                # print(unsqueeze_labels.shape)
 
                 # batch_loss = self.criterion(scores, labels)
                 batch_loss = self.model.crf.neg_log_likelihood(input=unsqueeze_scores, target=unsqueeze_labels)
