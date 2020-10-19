@@ -267,6 +267,8 @@ class Trainer():
 
                 # Forward pass.
 
+                # print("00000", all_input_ids.shape)
+
                 scores = self.model(datas, trian_bert)
 
 
@@ -283,8 +285,8 @@ class Trainer():
 
                 labels = labels.view(-1)
 
-                unsqueeze_scores = scores.unsqueeze(1)
-                unsqueeze_labels = labels.unsqueeze(1)
+                unsqueeze_scores = scores.unsqueeze(0)
+                unsqueeze_labels = labels.unsqueeze(0)
                 # print(unsqueeze_scores.shape)
                 # print(unsqueeze_labels.shape)
 
