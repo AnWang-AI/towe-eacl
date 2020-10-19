@@ -270,6 +270,10 @@ class Trainer():
 
                 # Backward pass.
                 batch_loss.backward()
+
+                for name, parms in model.named_parameters():
+                    print("name", name, "grad", parms.grad)
+
                 # Update parameters.
                 self.optimizer.step()
 
@@ -298,7 +302,7 @@ class Trainer():
             pred_list = [pred.tolist() for pred in preds]
             label_list = [y.tolist() for y in ys]
             score_dict = score_BIO(pred_list, label_list, ignore_index=3)
-            BIO_info = 'Epoch: {} Train: BIO precision: {:.4f}, BIO recall: {:.4f}, BIO f1: {:.4f}'.format(epoch_index, score_dict["precision"],
+            BIO_info = 'Epoch: {} Train: loss: {:.4f} BIO precision: {:.4f}, BIO recall: {:.4f}, BIO f1: {:.4f}'.format(epoch_index, loss, score_dict["precision"],
                                                                                           score_dict["recall"],
                                                                                           score_dict["f1"])
             tprint(BIO_info)
