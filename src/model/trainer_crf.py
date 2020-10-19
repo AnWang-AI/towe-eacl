@@ -276,11 +276,13 @@ class Trainer():
 
                 labels = labels.view(-1)
 
-                print(scores.shape)
-                print(labels.shape)
+                unsqueeze_scores = scores.unsqueeze(1)
+                unsqueeze_labels = labels.unsqueeze(1)
+                print(unsqueeze_scores.shape)
+                print(unsqueeze_labels.shape)
 
                 # batch_loss = self.criterion(scores, labels)
-                batch_loss = self.model.crf.neg_log_likelihood(input=scores, target=labels)
+                batch_loss = self.model.crf.neg_log_likelihood(input=unsqueeze_scores, target=unsqueeze_labels)
 
                 # zero the parameter gradients
                 self.optimizer.zero_grad()
@@ -296,7 +298,7 @@ class Trainer():
 
                 # conbine result of epoch to eval
                 ys.append(labels)
-                preds.append(self.model.crf._viterbi_decode(scores))
+                preds.append(self.model.crf._viterbi_decode(unsqueeze_scores))
 
                 # Count loss and accuracy
                 total_loss += batch_loss
