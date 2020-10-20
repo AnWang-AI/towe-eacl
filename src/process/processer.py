@@ -172,9 +172,9 @@ class Processer():
             padding_seq_list = pad_sequence([seq for seq in seq_list], padding_value=padding_value).t()[:-1, :]
         return padding_seq_list
 
-    def get_node_data(self, numericalized_text, numericalized_target, numericalized_opinion, mask, aspects):
+    def get_node_data(self, numericalized_text, numericalized_target, numericalized_opinion, mask, aspect):
         data = Data(text_idx=numericalized_text, target=numericalized_target, opinion=numericalized_opinion, mask=mask,
-                    aspects=aspects)
+                    aspect=aspect)
         return data
 
 
