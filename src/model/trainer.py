@@ -14,7 +14,7 @@ from torch_geometric.nn import GATConv
 
 from src.process.processer import Processer
 from src.process.Dataset import TOWEDataset, TOWEDataset_with_bert, TOWEDataset_with_graph, TOWEDataset_with_graph_with_bert
-from src.model.Net import ExtractionNet, ExtractionNet_v2
+from src.model.Net import ExtractionNet, ExtractionNet_crf
 
 from src.tools.utils import MultiFocalLoss, tprint
 from src.tools.TOWE_utils import score_BIO

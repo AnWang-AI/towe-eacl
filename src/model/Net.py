@@ -147,9 +147,9 @@ class ExtractionNet(torch.nn.Module):
 
         return output
 
-class ExtractionNet_v2(torch.nn.Module):
+class ExtractionNet_crf(torch.nn.Module):
     def __init__(self, word_embed_dim, output_size, config_dicts, word_emb_mode="w2v", graph_mode=False):
-        super(ExtractionNet_v2, self).__init__()
+        super(ExtractionNet_crf, self).__init__()
 
         self.default_config = config_dicts['default']
         self.preprocess_config = config_dicts['preprocess']
@@ -282,6 +282,140 @@ class ExtractionNet_v2(torch.nn.Module):
 
         return output
 
+class ExtractionNet_mrc(torch.nn.Module):
+    def __init__(self, word_embed_dim, output_size, config_dicts, word_emb_mode="w2v", graph_mode=False):
+        super(ExtractionNet_mrc, self).__init__()
+
+        self.default_config = config_dicts['default']
+        self.preprocess_config = config_dicts['preprocess']
+        self.model_config = config_dicts['model']
+
+        self.word_embed_dim = word_embed_dim
+        self.output_size = output_size
+
+        self.have_word_emb = self.model_config['have_word_emb']
+
+        self.feature_dim = 0
+
+        if self.have_word_emb:
+            self.word_emb_mode = word_emb_mode
+            assert word_emb_mode in ["w2v", "bert"]
+            if word_emb_mode == "w2v":
+
+                # w2v_path = "./data/14res/word_embedding.txt"
+                w2v_path = self.preprocess_config['w2v_path']
+
+                self.w2v_matrix, self.vocab_id_map, self.id_vocab_map = init_w2v_matrix(w2v_path)
+                self.w2v_matrix = torch.from_numpy(np.float32(self.w2v_matrix))
+                vocab_size = self.preprocess_config['vocab_size']
+                self.word_embed = nn.Embedding(vocab_size, word_embed_dim)
+
+            else:
+                bert_path = self.preprocess_config['pretrained_bert_path']
+                self.embedding_model = BertModel.from_pretrained(bert_path)
+
+            self.feature_dim += self.word_embed_dim
+
+        self.target_emb_dim = self.model_config['target_embedding_dim']
+        self.target_embedding = torch.nn.Embedding(num_embeddings=output_size, embedding_dim=self.target_emb_dim)
+        self.feature_dim += self.target_emb_dim
+
+
+        self.have_tag = self.model_config['have_tag']
+        if self.have_tag:
+            self.tag_emb_dim = 100
+            self.tag_embedding = torch.nn.Embedding(num_embeddings=50, embedding_dim=self.tag_emb_dim)
+            self.feature_dim += self.tag_emb_dim
+
+        self.hidden_size = self.model_config['hidden_size']
+
+        self.graph_mode = graph_mode
+
+        if graph_mode==True:
+            mainnet_name = self.model_config['mainnet']
+            self.MainNet = eval(mainnet_name)(num_features=self.feature_dim, num_classes=self.hidden_size)
+
+            if self.have_word_emb:
+                self.LSTM_input_dim = self.hidden_size + self.word_embed_dim
+            else:
+                self.LSTM_input_dim = self.hidden_size
+            self.SubNet = BiLSTMNet(num_features=self.LSTM_input_dim, num_classes=output_size,
+                                     hidden_size=self.hidden_size)
+
+            # self.MainNet = DeepARGCNNet(num_features=self.feature_dim, num_classes=output_size)
+
+        else:
+            self.MainNet = BiLSTMNet(num_features=self.feature_dim, num_classes=output_size,
+                                     hidden_size=self.hidden_size)
+
+        self.init_weight()
+
+    def init_weight(self):
+        if self.have_word_emb:
+            if self.word_emb_mode == "w2v":
+                device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+                self.word_embed.weight = torch.nn.Parameter(self.w2v_matrix.to(device), requires_grad=False)
+
+        # self.tag_embedding.weight = torch.nn.Parameter(torch.eye(4), requires_grad=True)
+        torch.nn.init.xavier_normal_(self.target_embedding.weight)
+
+        if self.have_tag:
+            torch.nn.init.xavier_normal_(self.tag_embedding.weight)
+
+    def forward(self, batch, trian_bert=False):
+
+        target_embedding = self.target_embedding(batch.target)
+        target_embedding = target_embedding.reshape(-1, 100, self.target_emb_dim)
+
+        x = batch.text_idx
+
+        if self.have_word_emb:
+            if self.word_emb_mode == "w2v":
+                word_embedding = self.word_embed(x)
+                word_embedding = word_embedding.reshape(-1, 100, self.word_embed_dim)
+            else:
+                x = x.reshape(-1, 100)
+                # bert_model_input_size: [batch size, time step]
+                if trian_bert:
+                    word_embedding = self.embedding_model(x)[0]
+                else:
+                    with torch.no_grad():
+                        word_embedding = self.embedding_model(x)[0]
+
+            x = torch.cat([word_embedding, target_embedding], dim=-1)
+        else:
+            x = target_embedding
+
+        print(batch.target)
+
+
+
+        if self.have_tag:
+            tag_embedding = self.tag_embedding(batch.tag)
+            tag_embedding = tag_embedding.reshape(-1, 100, self.tag_emb_dim)
+            x = torch.cat([x, tag_embedding], dim=-1)
+
+        if self.graph_mode:
+            x = x.reshape(-1, self.feature_dim)
+            # x = x.reshape(-1, self.word_embed_dim + self.target_emb_dim + self.tag_embed_dim)
+            edge_idx = batch.edge_index
+            edge_type = batch.edge_type
+            edge_distance = batch.edge_distance
+
+            x = self.MainNet(x, edge_idx, edge_type, edge_distance)
+            x = x.reshape(-1, 100, self.hidden_size)
+
+            if self.have_word_emb:
+                x = torch.cat([x, word_embedding], dim=-1)
+
+            x = self.SubNet(x)
+        else:
+            # x shape: [batch size, time step, embed dim]
+            x = self.MainNet(x)
+
+        output = F.log_softmax(x, dim=-1)
+
+        return output
 
 class BiLSTMNet(torch.nn.Module):
     def __init__(self, num_features, num_classes, hidden_size):
