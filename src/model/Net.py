@@ -390,9 +390,9 @@ class ExtractionNet_mrc(torch.nn.Module):
         aspect = batch.aspect
         aspect_embedding = self.word_embed(aspect)
         aspect_embedding = aspect_embedding.reshape(-1, 30, self.word_embed_dim)
-        question_embedding = aspect_embedding.sum(axis=0)
+        question_embedding = aspect_embedding.sum(axis=1)
 
-        print(batch.aspect.shape, x.shape, question_embedding.shape)
+        print(batch.aspect.shape, x.shape, question_embedding.shape, target_embedding.shape)
 
         # x = torch.cat([x, question_embedding], dim=-1)
 
