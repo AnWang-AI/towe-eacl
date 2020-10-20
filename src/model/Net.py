@@ -387,8 +387,9 @@ class ExtractionNet_mrc(torch.nn.Module):
             x = target_embedding
 
         print(batch.target)
-
-
+        select = batch.target>0
+        target_idx = batch.text_idx * select
+        print(target_idx)
 
         if self.have_tag:
             tag_embedding = self.tag_embedding(batch.tag)
