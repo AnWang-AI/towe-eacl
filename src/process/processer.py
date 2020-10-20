@@ -124,7 +124,7 @@ class Processer():
                 torch.tensor(self.numericalize_text_with_bert(aspect, self.tokenizer), dtype=torch.long) for aspect in
                 aspects]
 
-        numericalized_aspects = self.padding(numericalized_aspects, 10, padding_value=0)
+        numericalized_aspects = self.padding(numericalized_aspects, 30, padding_value=0)
 
         return numericalized_aspects
 
