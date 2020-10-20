@@ -320,7 +320,7 @@ class ExtractionNet_mrc(torch.nn.Module):
         self.target_embedding = torch.nn.Embedding(num_embeddings=output_size, embedding_dim=self.target_emb_dim)
         self.feature_dim += self.target_emb_dim
 
-        self.feature_dim += self.word_embed_dim
+        # self.feature_dim += self.word_embed_dim
 
         self.have_tag = self.model_config['have_tag']
         if self.have_tag:
@@ -391,9 +391,9 @@ class ExtractionNet_mrc(torch.nn.Module):
         aspect_embedding = self.word_embed(aspect)
         question_embedding = aspect_embedding.sum(axis=0)
 
-        print(x.shape, question_embedding.shape)
+        print(batch.aspect.shape, x.shape, question_embedding.shape)
 
-        x = torch.cat([x, question_embedding], dim=-1)
+        # x = torch.cat([x, question_embedding], dim=-1)
 
         if self.have_tag:
             tag_embedding = self.tag_embedding(batch.tag)
