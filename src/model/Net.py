@@ -387,7 +387,7 @@ class ExtractionNet_mrc(torch.nn.Module):
             x = target_embedding
 
         print(batch.target)
-        select = batch.target>0
+        select = batch.target in [1,2]
         target_idx = batch.text_idx * select
         print(target_idx)
 

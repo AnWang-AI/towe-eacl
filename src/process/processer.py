@@ -15,7 +15,9 @@ from torch_geometric.data import Data
 from transformers import BertTokenizer
 
 import sys
+
 sys.path.append('..')
+
 
 class Processer():
     def __init__(self, data_path, word_emb_mode="w2v", build_graph=True):
@@ -87,9 +89,14 @@ class Processer():
         for dataset_type in self.data.keys():
             assert dataset_type in ["train", "valid", "test"]
             text, target, opinion = self.data[dataset_type][0], self.data[dataset_type][1], self.data[dataset_type][2]
-            numericalized_text, numericalized_target, numericalized_label = self.numericalize_data(text, target, opinion)
+            numericalized_text, numericalized_target, numericalized_label = self.numericalize_data(text, target,
+                                                                                                   opinion)
+
+            numericalized_aspects = self.get_aspects(text, numericalized_target)
+
             mask = numericalized_label != 3
-            node_data = self.get_node_data(numericalized_text, numericalized_target, numericalized_label, mask)
+            node_data = self.get_node_data(numericalized_text, numericalized_target, numericalized_label, mask,
+                                           numericalized_aspects)
             node_data_dict[dataset_type + "_node"] = node_data
 
             if self.build_graph_mode:
@@ -98,6 +105,28 @@ class Processer():
                 node_data_dict[dataset_type + "_node_tag"] = self.padding(word_tags_list, 100, padding_value=0)
 
         return node_data_dict
+
+    def get_aspects(self, texts, targets):
+        aspects = []
+        for (text, target) in zip(texts, targets):
+            text = text.split()
+            aspect = []
+            for idx in range(target.shape[0]):
+                if target[idx] == 1 or target[idx] == 2:
+                    aspect.append(text[idx])
+            aspects.append(aspect)
+
+        if self.word_emb_mode == "w2v":
+            numericalized_aspects = [torch.tensor(numericalize(aspect, self.vocab_id_map), dtype=torch.long) for aspect
+                                     in aspects]
+        else:
+            numericalized_aspects = [
+                torch.tensor(self.numericalize_text_with_bert(aspect, self.tokenizer), dtype=torch.long) for aspect in
+                aspects]
+
+        numericalized_aspects = self.padding(numericalized_aspects, 10, padding_value=0)
+
+        return numericalized_aspects
 
     def get_edge(self, text_list):
         get_graph = partial(self.grapher.get_graph, graph_type="distance+dep")
@@ -110,12 +139,16 @@ class Processer():
     def numericalize_data(self, texts, targets, opinions, padding=True):
 
         if self.word_emb_mode == "w2v":
-            numericalized_text = [torch.tensor(numericalize(text, self.vocab_id_map), dtype=torch.long) for text in texts]
+            numericalized_text = [torch.tensor(numericalize(text, self.vocab_id_map), dtype=torch.long) for text in
+                                  texts]
         else:
-            numericalized_text = [torch.tensor(self.numericalize_text_with_bert(text, self.tokenizer), dtype=torch.long) for text in texts]
+            numericalized_text = [torch.tensor(self.numericalize_text_with_bert(text, self.tokenizer), dtype=torch.long)
+                                  for text in texts]
 
-        numericalized_target = [torch.tensor(numericalize_label(target, self.tag2id), dtype=torch.long) for target in targets]
-        numericalized_label = [torch.tensor(numericalize_label(label, self.tag2id), dtype=torch.long) for label in opinions]
+        numericalized_target = [torch.tensor(numericalize_label(target, self.tag2id), dtype=torch.long) for target in
+                                targets]
+        numericalized_label = [torch.tensor(numericalize_label(label, self.tag2id), dtype=torch.long) for label in
+                               opinions]
 
         if padding:
             numericalized_text = self.padding(numericalized_text, 100)
@@ -130,26 +163,24 @@ class Processer():
         text_idx = tokenizer.encode(tokens)[1:-1]
         return text_idx
 
-    def padding(self, seq_list, max_length=None, padding_value = 3):
+    def padding(self, seq_list, max_length=None, padding_value=3):
         if max_length is None:
             padding_seq_list = pad_sequence(seq_list, padding_value=padding_value).t()
         else:
             # padding to specified length
             seq_list.append(torch.zeros(max_length))
-            padding_seq_list = pad_sequence([seq for seq in seq_list] , padding_value=padding_value).t()[:-1, :]
+            padding_seq_list = pad_sequence([seq for seq in seq_list], padding_value=padding_value).t()[:-1, :]
         return padding_seq_list
 
-    def get_node_data(self, numericalized_text, numericalized_target, numericalized_opinion, mask):
-        data = Data(text_idx=numericalized_text, target=numericalized_target, opinion=numericalized_opinion, mask=mask)
+    def get_node_data(self, numericalized_text, numericalized_target, numericalized_opinion, mask, aspects):
+        data = Data(text_idx=numericalized_text, target=numericalized_target, opinion=numericalized_opinion, mask=mask,
+                    aspects=aspects)
         return data
+
 
 if __name__ == "__main__":
     path = './data/14res'
-    processer = Processer(path, word_emb_mode="bert", build_graph=True)
+    processer = Processer(path, word_emb_mode="w2v", build_graph=True)
     processer.load_data()
     data = processer.process_data()
     print(data.keys())
-
-
-
-

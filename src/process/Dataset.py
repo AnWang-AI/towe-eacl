@@ -52,7 +52,8 @@ class TOWEDataset(InMemoryDataset):
                 opinion = current_data.opinion[idx]
                 target = current_data.target[idx]
                 mask = current_data.mask[idx]
-                data = Data(text_idx=text_idx, opinion=opinion, target=target, mask=mask)
+                aspect = current_data.aspect[idx]
+                data = Data(text_idx=text_idx, opinion=opinion, target=target, mask=mask, aspect=aspect)
                 data_list.append(data)
             # 这里的save方式以及路径需要对应构造函数中的load操作
             torch.save(self.collate(data_list), self.processed_paths[s])

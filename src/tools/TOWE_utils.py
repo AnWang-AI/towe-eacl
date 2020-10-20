@@ -54,7 +54,10 @@ def split_dev(train_texts, train_t, train_ow):
     return train_texts, train_t, train_ow, dev_texts, dev_t, dev_ow, train_i_index, dev_i_index
 
 def numericalize(text, vocab):
-    tokens = text.split()
+    if type(text)== str:
+        tokens = text.split()
+    else:
+        tokens = text
     ids = []
     for token in tokens:
         token = token.lower()
