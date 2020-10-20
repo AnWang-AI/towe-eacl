@@ -389,7 +389,7 @@ class ExtractionNet_mrc(torch.nn.Module):
         print(batch.aspect)
         aspect = batch.aspect
         aspect_embedding = self.word_embed(aspect)
-        question_embedding = aspect_embedding.sum(axis=1)
+        question_embedding = aspect_embedding.sum(axis=0)
         print(question_embedding)
 
         if self.have_tag:
