@@ -386,10 +386,10 @@ class ExtractionNet_mrc(torch.nn.Module):
         else:
             x = target_embedding
 
-        print(batch.target)
-        select = batch.target in [1,2]
-        target_idx = batch.text_idx * select
-        print(target_idx)
+        print(batch.aspect)
+        aspect = batch.aspect
+        aspect_embedding = self.word_embed(aspect)
+        print(aspect_embedding)
 
         if self.have_tag:
             tag_embedding = self.tag_embedding(batch.tag)
