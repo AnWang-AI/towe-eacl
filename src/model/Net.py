@@ -13,6 +13,7 @@ from src.model.layers.ARGCN_dep_conv import ARGCN_dep_conv
 from src.model.layers.ARGCN_dep_distance_conv import ARGCN_dep_distance_conv, ARGCN_dep_distance_conv_v2, ARGCN_dep_distance_conv_multi_head, ARGCN_dep_distance_conv_multi_head_v2
 from src.model.layers.ARGCN_distance_conv import ARGCN_distance_conv_multi_head
 from src.model.layers.RGAT_conv import RGAT_conv
+from src.model.layers.SelfAttention import SelfAttention
 from src.model.LSTM_CRF import LinearCRF
 
 from src.tools.utils import init_w2v_matrix
@@ -349,6 +350,7 @@ class ExtractionNet_mrc(torch.nn.Module):
             self.MainNet = BiLSTMNet(input_dim=self.feature_dim, ouput_dim=self.hidden_size,
                                      hidden_size=self.hidden_size)
 
+        self.self_att = SelfAttention(hidden_size=2 * self.hidden_size, num_attention_heads=8, dropout_prob=0.2)
         self.fin_lin = torch.nn.Linear(2 * self.hidden_size, output_size)
 
         self.init_weight()
@@ -427,9 +429,10 @@ class ExtractionNet_mrc(torch.nn.Module):
 
         x = F.relu(x)
 
-        print(x.shape)
-
         x = torch.cat([x, question_rep], dim=-1)
+        x = self.self_att(x)
+
+        x = F.relu(x)
         x = self.fin_lin(x)
 
 
