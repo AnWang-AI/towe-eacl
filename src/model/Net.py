@@ -318,7 +318,7 @@ class ExtractionNet_mrc(torch.nn.Module):
 
         self.target_emb_dim = self.model_config['target_embedding_dim']
         self.target_embedding = torch.nn.Embedding(num_embeddings=output_size, embedding_dim=self.target_emb_dim)
-        # self.feature_dim += self.target_emb_dim
+        self.feature_dim += self.target_emb_dim
 
         # self.feature_dim += self.word_embed_dim
 
@@ -389,7 +389,7 @@ class ExtractionNet_mrc(torch.nn.Module):
         else:
             x = target_embedding
 
-        x = word_embedding
+        # x = word_embedding
 
         aspect = batch.aspect
         aspect_embedding = self.word_embed(aspect)
