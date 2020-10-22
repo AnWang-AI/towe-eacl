@@ -404,32 +404,32 @@ class ExtractionNet_mrc(torch.nn.Module):
         else:
             x = target_embedding
 
-        aspect = batch.aspect
-        if self.word_emb_mode == "w2v":
-            aspect_embedding = self.word_embed(aspect)
-            aspect_embedding = aspect_embedding.reshape(-1, 30, self.word_embed_dim)
-            aspect = aspect.reshape(-1, 30)
-        else:
-            aspect = aspect.reshape(-1, 30)
-            if trian_bert:
-                aspect_embedding = self.embedding_model(aspect)[0]
-            else:
-                with torch.no_grad():
-                    aspect_embedding = self.embedding_model(aspect)[0]
-
-        aspect_length = (aspect>0).sum(-1).reshape(-1, 1)
-
-        question_embedding = aspect_embedding.sum(axis=1)/aspect_length
-        # question_embedding = aspect_embedding.max(axis=1).values
-        # question_embedding = question_embedding/10
-
-        question_embedding = question_embedding.unsqueeze(dim=1)
-        question_embedding = question_embedding.expand(question_embedding.shape[0], 100, question_embedding.shape[2])
-        question_embedding = F.relu(question_embedding)
-
-        question_rep = self.q_lin(question_embedding)
-
-        question_rep = F.relu(question_rep)
+        # aspect = batch.aspect
+        # if self.word_emb_mode == "w2v":
+        #     aspect_embedding = self.word_embed(aspect)
+        #     aspect_embedding = aspect_embedding.reshape(-1, 30, self.word_embed_dim)
+        #     aspect = aspect.reshape(-1, 30)
+        # else:
+        #     aspect = aspect.reshape(-1, 30)
+        #     if trian_bert:
+        #         aspect_embedding = self.embedding_model(aspect)[0]
+        #     else:
+        #         with torch.no_grad():
+        #             aspect_embedding = self.embedding_model(aspect)[0]
+        #
+        # aspect_length = (aspect>0).sum(-1).reshape(-1, 1)
+        #
+        # question_embedding = aspect_embedding.sum(axis=1)/aspect_length
+        # # question_embedding = aspect_embedding.max(axis=1).values
+        # # question_embedding = question_embedding/10
+        #
+        # question_embedding = question_embedding.unsqueeze(dim=1)
+        # question_embedding = question_embedding.expand(question_embedding.shape[0], 100, question_embedding.shape[2])
+        # question_embedding = F.relu(question_embedding)
+        #
+        # question_rep = self.q_lin(question_embedding)
+        #
+        # question_rep = F.relu(question_rep)
 
 
 
@@ -460,9 +460,20 @@ class ExtractionNet_mrc(torch.nn.Module):
 
         target = (batch.target == 1).long() + (batch.target == 2).long()
         target = target.reshape(-1, 100, 1)
-        print(x.shape, target.shape)
         aspect_embedding = x * target
-        print(aspect_embedding.shape)
+        aspect_length = (target > 0).sum(-1).reshape(-1, 1)
+        question_embedding = aspect_embedding.sum(axis=1) / aspect_length
+        # question_embedding = aspect_embedding.max(axis=1).values
+        # question_embedding = question_embedding/10
+
+        question_embedding = question_embedding.unsqueeze(dim=1)
+        question_embedding = question_embedding.expand(question_embedding.shape[0], 100, question_embedding.shape[2])
+        question_embedding = F.relu(question_embedding)
+
+        question_rep = self.q_lin(question_embedding)
+
+        question_rep = F.relu(question_rep)
+
 
         x = torch.cat([x, question_rep], dim=-1)
         # print(batch.aspect.reshape(-1, 30))
