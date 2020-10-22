@@ -13,7 +13,7 @@ import torch_geometric.transforms as T
 from torch_geometric.nn import GATConv
 
 from src.process.processer import Processer
-from src.process.Dataset import TOWEDataset, TOWEDataset_with_bert, TOWEDataset_with_graph, TOWEDataset_with_graph_with_bert
+from src.process.Dataset import TOWEDataset
 from src.model.Net import ExtractionNet, ExtractionNet_crf
 
 from src.tools.utils import MultiFocalLoss, tprint
@@ -56,29 +56,51 @@ def set_random_seed(seed = 999):
 
 
 def load_data(data_path, train_batch_size=1, val_batch_size=1, use_bert=False, build_graph=False):
-
     if use_bert:
         if build_graph:
             print("use bert! buile graph!")
-            train_dataset = TOWEDataset_with_graph_with_bert(data_path, 'train')
-            val_dataset = TOWEDataset_with_graph_with_bert(data_path, 'valid')
-            test_dataset = TOWEDataset_with_graph_with_bert(data_path, 'test')
+            word_emb_mode = 'bert'
+            build_graph = True
+
         else:
             print("use bert!")
-            train_dataset = TOWEDataset_with_bert(data_path, 'train')
-            val_dataset = TOWEDataset_with_bert(data_path, 'valid')
-            test_dataset = TOWEDataset_with_bert(data_path, 'test')
+            word_emb_mode = 'bert'
+            build_graph = False
     else:
         if build_graph:
             print("use w2v! buile graph!")
-            train_dataset = TOWEDataset_with_graph(data_path, 'train')
-            val_dataset = TOWEDataset_with_graph(data_path, 'valid')
-            test_dataset = TOWEDataset_with_graph(data_path, 'test')
+            word_emb_mode = 'w2v'
+            build_graph = True
         else:
             print("use w2v")
-            train_dataset = TOWEDataset(data_path, 'train')
-            val_dataset = TOWEDataset(data_path, 'valid')
-            test_dataset = TOWEDataset(data_path, 'test')
+            word_emb_mode = 'w2v'
+            build_graph = False
+
+    train_dataset = TOWEDataset(data_path, 'train', word_emb_mode=word_emb_mode, build_graph=build_graph)
+    val_dataset = TOWEDataset(data_path, 'valid', word_emb_mode=word_emb_mode, build_graph=build_graph)
+    test_dataset = TOWEDataset(data_path, 'test', word_emb_mode=word_emb_mode, build_graph=build_graph)
+
+    new_dataset = []
+    for datas in train_dataset:
+        value_type = datas.opinion.long()
+
+        need_labels = [2]
+        flag = 0
+        for need_label in need_labels:
+            if need_label in value_type:
+                flag = 1
+        if flag == 0:
+            continue
+        new_dataset.append(datas)
+    train_dataset = train_dataset + new_dataset * 2
+
+    train_loader = DataLoader(train_dataset, batch_size=train_batch_size, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=train_batch_size, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=val_batch_size, shuffle=False)
+
+    data_loader = {'train': train_loader, 'valid': val_loader, 'test': test_loader}
+
+    return data_loader
 
     #
     new_dataset = []
