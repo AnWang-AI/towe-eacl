@@ -350,7 +350,7 @@ class ExtractionNet_mrc(torch.nn.Module):
         else:
             self.MainNet = BiLSTMNet(input_dim=self.feature_dim, ouput_dim=self.hidden_size,
                                      hidden_size=self.hidden_size)
-            self.fin_lin = torch.nn.Linear(2 * self.word_embed_dim, output_size)
+            self.fin_lin = torch.nn.Linear(2 * self.hidden_size, output_size)
 
         self.init_weight()
 
