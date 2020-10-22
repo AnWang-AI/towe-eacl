@@ -158,8 +158,12 @@ class Processer():
         return numericalized_text, numericalized_target, numericalized_label
 
     def numericalize_text_with_bert(self, text, tokenizer):
-        text = text.lower()
-        tokens = text.split()
+        if type(text) == str:
+            text = text.lower()
+            tokens = text.split()
+        else:
+            tokens = [item.lower() for item in text]
+
         text_idx = tokenizer.encode(tokens)[1:-1]
         return text_idx
 
