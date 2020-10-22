@@ -10,13 +10,15 @@ from torch_geometric.data import Data
 from transformers import BertModel
 
 from src.model.layers.ARGCN_dep_conv import ARGCN_dep_conv
-from src.model.layers.ARGCN_dep_distance_conv import ARGCN_dep_distance_conv, ARGCN_dep_distance_conv_v2, ARGCN_dep_distance_conv_multi_head, ARGCN_dep_distance_conv_multi_head_v2
+from src.model.layers.ARGCN_dep_distance_conv import ARGCN_dep_distance_conv, ARGCN_dep_distance_conv_v2, \
+    ARGCN_dep_distance_conv_multi_head, ARGCN_dep_distance_conv_multi_head_v2
 from src.model.layers.ARGCN_distance_conv import ARGCN_distance_conv_multi_head
 from src.model.layers.RGAT_conv import RGAT_conv
 from src.model.layers.SelfAttention import SelfAttention
 from src.model.LSTM_CRF import LinearCRF
 
 from src.tools.utils import init_w2v_matrix
+
 
 class ExtractionNet(torch.nn.Module):
     def __init__(self, word_embed_dim, output_size, config_dicts, word_emb_mode="w2v", graph_mode=False):
@@ -66,7 +68,7 @@ class ExtractionNet(torch.nn.Module):
 
         self.graph_mode = graph_mode
 
-        if graph_mode==True:
+        if graph_mode == True:
             mainnet_name = self.model_config['mainnet']
             self.MainNet = eval(mainnet_name)(num_features=self.feature_dim, num_classes=self.hidden_size)
 
@@ -148,6 +150,7 @@ class ExtractionNet(torch.nn.Module):
 
         return output
 
+
 class ExtractionNet_crf(torch.nn.Module):
     def __init__(self, word_embed_dim, output_size, config_dicts, word_emb_mode="w2v", graph_mode=False):
         super(ExtractionNet_crf, self).__init__()
@@ -196,7 +199,7 @@ class ExtractionNet_crf(torch.nn.Module):
 
         self.graph_mode = graph_mode
 
-        if graph_mode==True:
+        if graph_mode == True:
 
             self.SubNet1 = BiLSTMNet(input_dim=self.feature_dim, ouput_dim=self.hidden_size,
                                      hidden_size=self.hidden_size)
@@ -283,6 +286,7 @@ class ExtractionNet_crf(torch.nn.Module):
 
         return output
 
+
 class ExtractionNet_mrc(torch.nn.Module):
     def __init__(self, word_embed_dim, output_size, config_dicts, word_emb_mode="w2v", graph_mode=False):
         super(ExtractionNet_mrc, self).__init__()
@@ -332,10 +336,9 @@ class ExtractionNet_mrc(torch.nn.Module):
         self.hidden_size = self.model_config['hidden_size']
         self.q_lin = torch.nn.Linear(self.word_embed_dim, self.hidden_size)
 
-
         self.graph_mode = graph_mode
 
-        if graph_mode==True:
+        if graph_mode == True:
             mainnet_name = self.model_config['mainnet']
             self.MainNet = eval(mainnet_name)(num_features=self.feature_dim, num_classes=self.hidden_size)
 
@@ -403,7 +406,6 @@ class ExtractionNet_mrc(torch.nn.Module):
         question_rep = self.q_lin(question_embedding)
         question_rep = F.relu(question_rep)
 
-
         if self.have_tag:
             tag_embedding = self.tag_embedding(batch.tag)
             tag_embedding = tag_embedding.reshape(-1, 100, self.tag_emb_dim)
@@ -433,20 +435,18 @@ class ExtractionNet_mrc(torch.nn.Module):
         # print(batch.aspect.reshape(-1, 30))
         # print(x.shape)
         # print(torch.ones(x.shape).cuda().shape)
-        aspect_mask = (batch.aspect.reshape(-1, 30)>0).float()
-        x = self.self_att(x, aspect_mask)
+        x = self.self_att(x, torch.ones(x.shape[:2]).cuda())
 
         x = F.relu(x)
         x = self.fin_lin(x)
-
 
         output = F.log_softmax(x, dim=-1)
 
         return output
 
+
 class BiLSTMNet(torch.nn.Module):
     def __init__(self, input_dim, ouput_dim, hidden_size):
-
         super(BiLSTMNet, self).__init__()
 
         self.BiLSTM = torch.nn.LSTM(input_dim, hidden_size, num_layers=1, bidirectional=True, batch_first=True)
@@ -465,11 +465,11 @@ class BiLSTMNet(torch.nn.Module):
         torch.nn.init.xavier_normal_(self.lin.weight)
 
     def forward(self, x):
-
         x, _ = self.BiLSTM(x)
         x = self.lin(x)
 
         return x
+
 
 class ARGCNNet(torch.nn.Module):
 
@@ -487,7 +487,6 @@ class ARGCNNet(torch.nn.Module):
         self.conv2 = conv_layer(self.hidden_dim, num_classes, edge_feature_dim=edge_feature_dim)
 
     def forward(self, x, edge_index, edge_type, edge_distance):
-
         x = self.conv1(x, edge_index, edge_type, edge_distance)
         x = F.dropout(x, p=0.4)
         x = F.relu(x)
@@ -515,7 +514,6 @@ class RGCNNet(torch.nn.Module):
         self.conv2 = conv_layer(self.hidden_dim, num_classes, num_relations=50, num_bases=1)
 
     def forward(self, x, edge_index, edge_type, edge_distance):
-
         edge_type = edge_type.reshape(-1)
         x = self.conv1(x, edge_index, edge_type)
         x = F.dropout(x, p=0.4)
@@ -538,11 +536,9 @@ class DeepARGCNNet(torch.nn.Module):
         self.norm_layer_list = torch.nn.ModuleList()
         self.conv_layer_list = torch.nn.ModuleList()
 
-
         conv_layer = ARGCN_dep_distance_conv_multi_head
         # conv_layer = RGAT_conv
         # conv_layer = ARGCN_distance_conv_multi_head
-
 
         self.hidden_dim = 128
 
@@ -563,9 +559,8 @@ class DeepARGCNNet(torch.nn.Module):
 
         x = self.conv_layer_list[0](x, edge_index, edge_type, edge_distance)
 
-
         for i in range(self.num_mid_layers):
-            x = self.norm_layer_list[i+1](x)
+            x = self.norm_layer_list[i + 1](x)
             x = F.leaky_relu(x, 0.1)
 
             x = self.conv_layer_list[i + 1](x, edge_index, edge_type, edge_distance) + x
@@ -578,6 +573,7 @@ class DeepARGCNNet(torch.nn.Module):
 
         return x
 
+
 class DeepRGCNNet(torch.nn.Module):
     def __init__(self, num_features=768, num_classes=9, edge_feature_dim=2, num_mid_layers=3):
         super(DeepRGCNNet, self).__init__()
@@ -587,7 +583,6 @@ class DeepRGCNNet(torch.nn.Module):
 
         self.norm_layer_list = torch.nn.ModuleList()
         self.conv_layer_list = torch.nn.ModuleList()
-
 
         conv_layer = RGCNConv
 
@@ -608,11 +603,10 @@ class DeepRGCNNet(torch.nn.Module):
 
     def forward(self, x, edge_index, edge_type, edge_distance):
 
-
         x = self.conv_layer_list[0](x, edge_index, edge_type.reshape(-1))
 
         for i in range(self.num_mid_layers):
-            x = self.norm_layer_list[i+1](x)
+            x = self.norm_layer_list[i + 1](x)
             x = F.leaky_relu(x, 0.1)
             x = self.conv_layer_list[i + 1](x, edge_index, edge_type.reshape(-1)) + x
 
@@ -624,6 +618,7 @@ class DeepRGCNNet(torch.nn.Module):
         x = F.leaky_relu(x, 0.1)
 
         return x
+
 
 class DeepGATNet(torch.nn.Module):
     def __init__(self, num_features=768, num_classes=9, num_mid_layers=3):
@@ -654,11 +649,10 @@ class DeepGATNet(torch.nn.Module):
 
     def forward(self, x, edge_index, edge_type, edge_distance):
 
-
         x = self.conv_layer_list[0](x, edge_index)
 
         for i in range(self.num_mid_layers):
-            x = self.norm_layer_list[i+1](x)
+            x = self.norm_layer_list[i + 1](x)
             x = F.leaky_relu(x, 0.1)
             x = self.conv_layer_list[i + 1](x, edge_index) + x
 
