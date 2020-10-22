@@ -427,6 +427,7 @@ class ExtractionNet_mrc(torch.nn.Module):
         question_embedding = F.relu(question_embedding)
         question_rep = self.q_lin(question_embedding)
         question_rep = F.relu(question_rep)
+        question_rep = F.dropout(question_rep, 0.2)
 
         if self.have_tag:
             tag_embedding = self.tag_embedding(batch.tag)
