@@ -348,7 +348,7 @@ class ExtractionNet_mrc(torch.nn.Module):
             # self.MainNet = DeepARGCNNet(num_features=self.feature_dim, num_classes=output_size)
 
         else:
-            self.MainNet = BiLSTMNet(num_features=self.feature_dim, num_classes=output_size,
+            self.MainNet = BiLSTMNet(num_features=self.feature_dim, num_classes=self.hidden_size,
                                      hidden_size=self.hidden_size)
             self.fin_lin = torch.nn.Linear(2 * self.word_embed_dim, output_size)
 
