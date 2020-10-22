@@ -430,9 +430,9 @@ class ExtractionNet_mrc(torch.nn.Module):
 
         question_rep = self.q_lin(question_embedding)
 
-        x = x.reshape(-1, self.hidden_size)
+        question_rep = question_rep.reshape(-1, self.hidden_size)
         question_rep = self.q_bn(question_rep)
-        x = x.reshape(-1, 100, self.hidden_size)
+        question_rep = question_rep.reshape(-1, 100, self.hidden_size)
 
         question_rep = F.relu(question_rep)
 
