@@ -405,7 +405,7 @@ class ExtractionNet_mrc(torch.nn.Module):
             x = target_embedding
 
         target = (batch.target == 1).long() + (batch.target == 2).long()
-        print(target)
+        print(target.shape)
 
         aspect = batch.aspect
         if self.word_emb_mode == "w2v":
