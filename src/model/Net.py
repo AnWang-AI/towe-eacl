@@ -320,6 +320,8 @@ class ExtractionNet_mrc(torch.nn.Module):
         self.target_embedding = torch.nn.Embedding(num_embeddings=output_size, embedding_dim=self.target_emb_dim)
         # self.feature_dim += self.target_emb_dim
 
+        self.q_lin = torch.nn.Linear(self.word_embed_dim, self.tag_emb_dim)
+
         # self.feature_dim += self.word_embed_dim
 
         self.have_tag = self.model_config['have_tag']
@@ -348,6 +350,7 @@ class ExtractionNet_mrc(torch.nn.Module):
         else:
             self.MainNet = BiLSTMNet(num_features=self.feature_dim, num_classes=output_size,
                                      hidden_size=self.hidden_size)
+            self.fin_lin = torch.nn.Linear(2 * self.word_embed_dim, output_size)
 
         self.init_weight()
 
@@ -395,10 +398,7 @@ class ExtractionNet_mrc(torch.nn.Module):
         question_embedding = aspect_embedding.sum(axis=1)
         question_embedding = question_embedding.unsqueeze(dim=1)
         question_embedding = question_embedding.expand(question_embedding.shape[0], 100, question_embedding.shape[2])
-
-        # print(batch.aspect.shape, x.shape, question_embedding.shape, target_embedding.shape)
-
-        # x = torch.cat([x, question_embedding], dim=-1)
+        question_rep = self.q_lin(question_embedding)
 
         if self.have_tag:
             tag_embedding = self.tag_embedding(batch.tag)
@@ -422,6 +422,10 @@ class ExtractionNet_mrc(torch.nn.Module):
         else:
             # x shape: [batch size, time step, embed dim]
             x = self.MainNet(x)
+
+            x = torch.cat([x, question_rep], dim=-1)
+            x = self.fin_lin(x)
+
 
         output = F.log_softmax(x, dim=-1)
 
