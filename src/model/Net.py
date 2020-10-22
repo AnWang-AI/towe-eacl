@@ -405,8 +405,18 @@ class ExtractionNet_mrc(torch.nn.Module):
         # x = word_embedding
 
         aspect = batch.aspect
-        aspect_embedding = self.word_embed(aspect)
-        aspect_embedding = aspect_embedding.reshape(-1, 30, self.word_embed_dim)
+        if self.word_emb_mode == "w2v":
+            aspect_embedding = self.word_embed(aspect)
+            aspect_embedding = aspect_embedding.reshape(-1, 30, self.aspect_embedding)
+        else:
+            aspect = aspect.reshape(-1, 30)
+            if trian_bert:
+                aspect_embedding = self.embedding_model(aspect)[0]
+            else:
+                with torch.no_grad():
+                    aspect_embedding = self.embedding_model(aspect)[0]
+
+
         question_embedding = aspect_embedding.mean(axis=1)
         question_embedding = question_embedding.unsqueeze(dim=1)
         question_embedding = question_embedding.expand(question_embedding.shape[0], 100, question_embedding.shape[2])
