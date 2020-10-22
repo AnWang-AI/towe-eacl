@@ -291,6 +291,8 @@ class ExtractionNet_mrc(torch.nn.Module):
     def __init__(self, word_embed_dim, output_size, config_dicts, word_emb_mode="w2v", graph_mode=False):
         super(ExtractionNet_mrc, self).__init__()
 
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
         self.default_config = config_dicts['default']
         self.preprocess_config = config_dicts['preprocess']
         self.model_config = config_dicts['model']
@@ -365,8 +367,7 @@ class ExtractionNet_mrc(torch.nn.Module):
     def init_weight(self):
         if self.have_word_emb:
             if self.word_emb_mode == "w2v":
-                device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-                self.word_embed.weight = torch.nn.Parameter(self.w2v_matrix.to(device), requires_grad=True)
+                self.word_embed.weight = torch.nn.Parameter(self.w2v_matrix.to(self.device), requires_grad=False)
 
         # self.tag_embedding.weight = torch.nn.Parameter(torch.eye(4), requires_grad=True)
         torch.nn.init.xavier_normal_(self.target_embedding.weight)
@@ -442,7 +443,7 @@ class ExtractionNet_mrc(torch.nn.Module):
         # print(batch.aspect.reshape(-1, 30))
         # print(x.shape)
         # print(torch.ones(x.shape).cuda().shape)
-        x = self.self_att(x, torch.ones(x.shape[:2]).cuda())+x
+        x = self.self_att(x, torch.ones(x.shape[:2]).to(self.device))+x
         x = F.relu(x)
         x = self.fin_lin(x)
 
