@@ -462,6 +462,7 @@ class ExtractionNet_mrc(torch.nn.Module):
         target = target.reshape(-1, 100, 1)
         print(x.shape, target.shape)
         aspect_embedding = x * target
+        print(aspect_embedding.shape)
 
         x = torch.cat([x, question_rep], dim=-1)
         # print(batch.aspect.reshape(-1, 30))
