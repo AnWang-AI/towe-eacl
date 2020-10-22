@@ -73,13 +73,13 @@ class ExtractionNet(torch.nn.Module):
                 self.LSTM_input_dim = self.hidden_size + self.word_embed_dim
             else:
                 self.LSTM_input_dim = self.hidden_size
-            self.SubNet = BiLSTMNet(num_features=self.LSTM_input_dim, num_classes=output_size,
-                                     hidden_size=self.hidden_size)
+            self.SubNet = BiLSTMNet(input_dim=self.LSTM_input_dim, ouput_dim=output_size,
+                                    hidden_size=self.hidden_size)
 
             # self.MainNet = DeepARGCNNet(num_features=self.feature_dim, num_classes=output_size)
 
         else:
-            self.MainNet = BiLSTMNet(num_features=self.feature_dim, num_classes=output_size,
+            self.MainNet = BiLSTMNet(input_dim=self.feature_dim, ouput_dim=output_size,
                                      hidden_size=self.hidden_size)
 
         self.init_weight()
@@ -197,7 +197,7 @@ class ExtractionNet_crf(torch.nn.Module):
 
         if graph_mode==True:
 
-            self.SubNet1 = BiLSTMNet(num_features=self.feature_dim, num_classes=self.hidden_size,
+            self.SubNet1 = BiLSTMNet(input_dim=self.feature_dim, ouput_dim=self.hidden_size,
                                      hidden_size=self.hidden_size)
 
             mainnet_name = self.model_config['mainnet']
@@ -205,13 +205,13 @@ class ExtractionNet_crf(torch.nn.Module):
 
             self.LSTM_input_dim = self.hidden_size + self.word_embed_dim
 
-            self.SubNet2 = BiLSTMNet(num_features=self.LSTM_input_dim, num_classes=output_size,
+            self.SubNet2 = BiLSTMNet(input_dim=self.LSTM_input_dim, ouput_dim=output_size,
                                      hidden_size=self.hidden_size)
 
             # self.MainNet = DeepARGCNNet(num_features=self.feature_dim, num_classes=output_size)
 
         else:
-            self.MainNet = BiLSTMNet(num_features=self.feature_dim, num_classes=output_size,
+            self.MainNet = BiLSTMNet(input_dim=self.feature_dim, ouput_dim=output_size,
                                      hidden_size=self.hidden_size)
 
         self.crf = LinearCRF(num_labels=output_size)
@@ -320,7 +320,7 @@ class ExtractionNet_mrc(torch.nn.Module):
         self.target_embedding = torch.nn.Embedding(num_embeddings=output_size, embedding_dim=self.target_emb_dim)
         # self.feature_dim += self.target_emb_dim
 
-        self.q_lin = torch.nn.Linear(self.word_embed_dim, self.target_emb_dim)
+        self.q_lin = torch.nn.Linear(self.word_embed_dim, self.hidden_size)
 
         # self.feature_dim += self.word_embed_dim
 
@@ -342,13 +342,13 @@ class ExtractionNet_mrc(torch.nn.Module):
                 self.LSTM_input_dim = self.hidden_size + self.word_embed_dim
             else:
                 self.LSTM_input_dim = self.hidden_size
-            self.SubNet = BiLSTMNet(num_features=self.LSTM_input_dim, num_classes=output_size,
-                                     hidden_size=self.hidden_size)
+            self.SubNet = BiLSTMNet(input_dim=self.LSTM_input_dim, ouput_dim=output_size,
+                                    hidden_size=self.hidden_size)
 
             # self.MainNet = DeepARGCNNet(num_features=self.feature_dim, num_classes=output_size)
 
         else:
-            self.MainNet = BiLSTMNet(num_features=self.feature_dim, num_classes=self.hidden_size,
+            self.MainNet = BiLSTMNet(input_dim=self.feature_dim, ouput_dim=self.hidden_size,
                                      hidden_size=self.hidden_size)
             self.fin_lin = torch.nn.Linear(2 * self.word_embed_dim, output_size)
 
@@ -432,12 +432,12 @@ class ExtractionNet_mrc(torch.nn.Module):
         return output
 
 class BiLSTMNet(torch.nn.Module):
-    def __init__(self, num_features, num_classes, hidden_size):
+    def __init__(self, input_dim, ouput_dim, hidden_size):
 
         super(BiLSTMNet, self).__init__()
 
-        self.BiLSTM = torch.nn.LSTM(num_features, hidden_size, num_layers=1, bidirectional=True, batch_first=True)
-        self.lin = torch.nn.Linear(hidden_size * 2, num_classes)
+        self.BiLSTM = torch.nn.LSTM(input_dim, hidden_size, num_layers=1, bidirectional=True, batch_first=True)
+        self.lin = torch.nn.Linear(hidden_size * 2, ouput_dim)
 
         # self.BiLSTM = torch.nn.LSTM(num_features, num_classes, num_layers=1, bidirectional=False, batch_first=True)
 
