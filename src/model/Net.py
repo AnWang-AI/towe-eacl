@@ -459,7 +459,7 @@ class ExtractionNet_mrc(torch.nn.Module):
         x = F.relu(x)
 
         target = (batch.target == 1).long() + (batch.target == 2).long()
-        target = target.reshape(-1, 100)
+        target = target.reshape(-1, 100, 1)
         print(x.shape, target.shape)
         aspect_embedding = x * target
 
