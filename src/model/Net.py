@@ -417,7 +417,7 @@ class ExtractionNet_mrc(torch.nn.Module):
                     aspect_embedding = self.embedding_model(aspect)[0]
 
 
-        question_embedding = aspect_embedding.mean(axis=1)
+        question_embedding = aspect_embedding.max(axis=1)
         question_embedding = question_embedding.unsqueeze(dim=1)
         question_embedding = question_embedding.expand(question_embedding.shape[0], 100, question_embedding.shape[2])
         question_embedding = F.relu(question_embedding)
