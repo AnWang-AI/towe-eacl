@@ -320,8 +320,6 @@ class ExtractionNet_mrc(torch.nn.Module):
         self.target_embedding = torch.nn.Embedding(num_embeddings=output_size, embedding_dim=self.target_emb_dim)
         # self.feature_dim += self.target_emb_dim
 
-        self.q_lin = torch.nn.Linear(self.word_embed_dim, self.hidden_size)
-
         # self.feature_dim += self.word_embed_dim
 
         self.have_tag = self.model_config['have_tag']
@@ -331,6 +329,8 @@ class ExtractionNet_mrc(torch.nn.Module):
             self.feature_dim += self.tag_emb_dim
 
         self.hidden_size = self.model_config['hidden_size']
+        self.q_lin = torch.nn.Linear(self.word_embed_dim, self.hidden_size)
+
 
         self.graph_mode = graph_mode
 
