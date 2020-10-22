@@ -433,7 +433,8 @@ class ExtractionNet_mrc(torch.nn.Module):
         # print(batch.aspect.reshape(-1, 30))
         # print(x.shape)
         # print(torch.ones(x.shape).cuda().shape)
-        x = self.self_att(x, batch.aspect.reshape(-1, 30)>0)
+        aspect_mask = (batch.aspect.reshape(-1, 30)>0).float()
+        x = self.self_att(x, aspect_mask)
 
         x = F.relu(x)
         x = self.fin_lin(x)
