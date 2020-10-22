@@ -358,7 +358,7 @@ class ExtractionNet_mrc(torch.nn.Module):
         # self.fin_lin = torch.nn.Linear(2 * self.hidden_size, output_size)
 
         self.fin_net = BiLSTMNet(input_dim=2 * self.hidden_size, ouput_dim=output_size,
-                                hidden_size=self.hidden_size)
+                                hidden_size=self.hidden_size, bidirectional=False)
 
         self.init_weight()
 
@@ -449,11 +449,14 @@ class ExtractionNet_mrc(torch.nn.Module):
 
 
 class BiLSTMNet(torch.nn.Module):
-    def __init__(self, input_dim, ouput_dim, hidden_size):
+    def __init__(self, input_dim, ouput_dim, hidden_size, bidirectional=True):
         super(BiLSTMNet, self).__init__()
 
-        self.BiLSTM = torch.nn.LSTM(input_dim, hidden_size, num_layers=1, bidirectional=True, batch_first=True)
-        self.lin = torch.nn.Linear(hidden_size * 2, ouput_dim)
+        self.BiLSTM = torch.nn.LSTM(input_dim, hidden_size, num_layers=1, bidirectional=bidirectional, batch_first=True)
+        if bidirectional:
+            self.lin = torch.nn.Linear(hidden_size * 2, ouput_dim)
+        else:
+            self.lin = torch.nn.Linear(hidden_size, ouput_dim)
 
         # self.BiLSTM = torch.nn.LSTM(num_features, num_classes, num_layers=1, bidirectional=False, batch_first=True)
 
