@@ -342,10 +342,8 @@ class ExtractionNet_mrc(torch.nn.Module):
                 self.LSTM_input_dim = self.hidden_size + self.word_embed_dim
             else:
                 self.LSTM_input_dim = self.hidden_size
-            self.SubNet = BiLSTMNet(input_dim=self.LSTM_input_dim, ouput_dim=output_size,
+            self.SubNet = BiLSTMNet(input_dim=self.LSTM_input_dim, ouput_dim=self.hidden_size,
                                     hidden_size=self.hidden_size)
-
-            self.MainNet = DeepARGCNNet(num_features=self.feature_dim, num_classes=self.hidden_size)
 
         else:
             self.MainNet = BiLSTMNet(input_dim=self.feature_dim, ouput_dim=self.hidden_size,
