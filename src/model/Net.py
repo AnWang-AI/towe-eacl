@@ -336,7 +336,7 @@ class ExtractionNet_mrc(torch.nn.Module):
             self.feature_dim += self.tag_emb_dim
 
         self.hidden_size = self.model_config['hidden_size']
-        self.q_lin = torch.nn.Linear(self.hidden_size, self.hidden_size)
+        self.q_lin = torch.nn.Linear(self.word_embed_dim, self.hidden_size)
 
         # self.q_bn = torch.nn.BatchNorm1d(self.hidden_size, eps=1e-05, momentum=0.1, affine=True)
 
@@ -404,32 +404,32 @@ class ExtractionNet_mrc(torch.nn.Module):
         else:
             x = target_embedding
 
-        # aspect = batch.aspect
-        # if self.word_emb_mode == "w2v":
-        #     aspect_embedding = self.word_embed(aspect)
-        #     aspect_embedding = aspect_embedding.reshape(-1, 30, self.word_embed_dim)
-        #     aspect = aspect.reshape(-1, 30)
-        # else:
-        #     aspect = aspect.reshape(-1, 30)
-        #     if trian_bert:
-        #         aspect_embedding = self.embedding_model(aspect)[0]
-        #     else:
-        #         with torch.no_grad():
-        #             aspect_embedding = self.embedding_model(aspect)[0]
-        #
-        # aspect_length = (aspect>0).sum(-1).reshape(-1, 1)
-        #
-        # question_embedding = aspect_embedding.sum(axis=1)/aspect_length
-        # # question_embedding = aspect_embedding.max(axis=1).values
-        # # question_embedding = question_embedding/10
-        #
-        # question_embedding = question_embedding.unsqueeze(dim=1)
-        # question_embedding = question_embedding.expand(question_embedding.shape[0], 100, question_embedding.shape[2])
-        # question_embedding = F.relu(question_embedding)
-        #
-        # question_rep = self.q_lin(question_embedding)
-        #
-        # question_rep = F.relu(question_rep)
+        aspect = batch.aspect
+        if self.word_emb_mode == "w2v":
+            aspect_embedding = self.word_embed(aspect)
+            aspect_embedding = aspect_embedding.reshape(-1, 30, self.word_embed_dim)
+            aspect = aspect.reshape(-1, 30)
+        else:
+            aspect = aspect.reshape(-1, 30)
+            if trian_bert:
+                aspect_embedding = self.embedding_model(aspect)[0]
+            else:
+                with torch.no_grad():
+                    aspect_embedding = self.embedding_model(aspect)[0]
+
+        aspect_length = (aspect>0).sum(-1).reshape(-1, 1)
+
+        question_embedding = aspect_embedding.sum(axis=1)/aspect_length
+        # question_embedding = aspect_embedding.max(axis=1).values
+        # question_embedding = question_embedding/10
+
+        question_embedding = question_embedding.unsqueeze(dim=1)
+        question_embedding = question_embedding.expand(question_embedding.shape[0], 100, question_embedding.shape[2])
+        question_embedding = F.relu(question_embedding)
+
+        question_rep = self.q_lin(question_embedding)
+
+        question_rep = F.relu(question_rep)
 
 
 
@@ -458,17 +458,17 @@ class ExtractionNet_mrc(torch.nn.Module):
 
         x = F.relu(x)
 
-        target = (batch.target == 1).long() + (batch.target == 2).long()
-        target = target.reshape(-1, 100, 1)
-        aspect_embedding = x * target
-        aspect_length = (target > 0).sum(1).reshape(-1, 1)
-        question_embedding = aspect_embedding.sum(axis=1) / aspect_length
-
-
-        question_embedding = question_embedding.unsqueeze(dim=1)
-        question_embedding = question_embedding.expand(question_embedding.shape[0], 100, question_embedding.shape[2])
-
-        question_rep = question_embedding
+        # target = (batch.target == 1).long() + (batch.target == 2).long()
+        # target = target.reshape(-1, 100, 1)
+        # aspect_embedding = x * target
+        # aspect_length = (target > 0).sum(1).reshape(-1, 1)
+        # question_embedding = aspect_embedding.sum(axis=1) / aspect_length
+        #
+        #
+        # question_embedding = question_embedding.unsqueeze(dim=1)
+        # question_embedding = question_embedding.expand(question_embedding.shape[0], 100, question_embedding.shape[2])
+        #
+        # question_rep = question_embedding
         # question_rep = self.q_lin(question_embedding)
         #
         # question_rep = F.relu(question_rep)
