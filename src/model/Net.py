@@ -398,6 +398,8 @@ class ExtractionNet_mrc(torch.nn.Module):
         question_embedding = question_embedding.unsqueeze(dim=1)
         question_embedding = question_embedding.expand(question_embedding.shape[0], 100, question_embedding.shape[2])
         question_rep = self.q_lin(question_embedding)
+        question_rep = F.relu(question_rep)
+
 
         if self.have_tag:
             tag_embedding = self.tag_embedding(batch.tag)
@@ -421,6 +423,8 @@ class ExtractionNet_mrc(torch.nn.Module):
         else:
             # x shape: [batch size, time step, embed dim]
             x = self.MainNet(x)
+
+        x = F.relu(x)
 
         x = torch.cat([x, question_rep], dim=-1)
 
