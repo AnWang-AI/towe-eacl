@@ -71,9 +71,10 @@ def load_data(data_path, train_batch_size=1, val_batch_size=1, use_bert=False, b
     else:
         if build_graph:
             print("use w2v! buile graph!")
-            train_dataset = TOWEDataset_with_graph(data_path, 'train')
-            val_dataset = TOWEDataset_with_graph(data_path, 'valid')
-            test_dataset = TOWEDataset_with_graph(data_path, 'test')
+            print("use w2v")
+            train_dataset = TOWEDataset(data_path, 'train', 'w2v')
+            val_dataset = TOWEDataset(data_path, 'valid', 'w2v')
+            test_dataset = TOWEDataset(data_path, 'test', 'w2v')
         else:
             print("use w2v")
             train_dataset = TOWEDataset(data_path, 'train')

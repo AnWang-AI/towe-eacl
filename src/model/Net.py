@@ -345,12 +345,13 @@ class ExtractionNet_mrc(torch.nn.Module):
             self.SubNet = BiLSTMNet(input_dim=self.LSTM_input_dim, ouput_dim=output_size,
                                     hidden_size=self.hidden_size)
 
-            # self.MainNet = DeepARGCNNet(num_features=self.feature_dim, num_classes=output_size)
+            self.MainNet = DeepARGCNNet(num_features=self.feature_dim, num_classes=self.hidden_size)
 
         else:
             self.MainNet = BiLSTMNet(input_dim=self.feature_dim, ouput_dim=self.hidden_size,
                                      hidden_size=self.hidden_size)
-            self.fin_lin = torch.nn.Linear(2 * self.hidden_size, output_size)
+
+        self.fin_lin = torch.nn.Linear(2 * self.hidden_size, output_size)
 
         self.init_weight()
 
@@ -423,8 +424,9 @@ class ExtractionNet_mrc(torch.nn.Module):
             # x shape: [batch size, time step, embed dim]
             x = self.MainNet(x)
 
-            x = torch.cat([x, question_rep], dim=-1)
-            x = self.fin_lin(x)
+        x = torch.cat([x, question_rep], dim=-1)
+
+        x = self.fin_lin(x)
 
 
         output = F.log_softmax(x, dim=-1)

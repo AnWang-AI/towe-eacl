@@ -10,7 +10,10 @@ from src.process.processer import Processer
 
 
 class TOWEDataset(InMemoryDataset):
-    def __init__(self, root, split='train', transform=None, pre_transform=None, pre_filter=None):
+    def __init__(self, root, split='train', word_emb_mode='w2v', build_graph=False, transform=None, pre_transform=None, pre_filter=None):
+
+        self.word_emb_mode = word_emb_mode
+        self.build_graph = build_graph
 
         super(TOWEDataset, self).__init__(root, transform, pre_transform, pre_filter)
 
@@ -38,7 +41,8 @@ class TOWEDataset(InMemoryDataset):
 
     def process(self):
 
-        processer = Processer(self.root, word_emb_mode="w2v")
+
+        processer = Processer(self.root, word_emb_mode=self.word_emb_mode, build_graph=self.build_graph)
 
         processer.load_data()
         dataset = processer.process_data()
@@ -46,6 +50,11 @@ class TOWEDataset(InMemoryDataset):
         for s, split in enumerate(['train', 'valid', 'test']):
 
             current_data = dataset[split+"_node"]
+
+            if self.build_graph:
+                current_edge_data = dataset[split+"_edge"]
+                current_node_tag_data = dataset[split + "_node_tag"]
+
             data_list = []
             for idx in range(current_data.text_idx.shape[0]):
                 text_idx = current_data.text_idx[idx]
@@ -53,7 +62,20 @@ class TOWEDataset(InMemoryDataset):
                 target = current_data.target[idx]
                 mask = current_data.mask[idx]
                 aspect = current_data.aspect[idx]
-                data = Data(text_idx=text_idx, opinion=opinion, target=target, mask=mask, aspect=aspect)
+
+                if self.build_graph:
+                    edge_idx = current_edge_data[idx].edge_idx
+                    edge_type = current_edge_data[idx].edge_type
+                    tag = current_node_tag_data[idx]
+
+                    # try:
+                    edge_distance = current_edge_data[idx].edge_distance
+                    data = Data(text_idx=text_idx, opinion=opinion, target=target, mask=mask, aspect=aspect,
+                                edge_index=edge_idx, edge_type=edge_type, edge_distance=edge_distance,
+                                tag=tag, num_nodes=100)
+                else:
+                    data = Data(text_idx=text_idx, opinion=opinion, target=target, mask=mask, aspect=aspect)
+
                 data_list.append(data)
             # 这里的save方式以及路径需要对应构造函数中的load操作
             torch.save(self.collate(data_list), self.processed_paths[s])
