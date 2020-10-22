@@ -357,7 +357,7 @@ class ExtractionNet_mrc(torch.nn.Module):
             self.MainNet = BiLSTMNet(input_dim=self.feature_dim, ouput_dim=self.hidden_size,
                                      hidden_size=self.hidden_size)
 
-        self.self_att = SelfAttention(hidden_size=2 * self.hidden_size, num_attention_heads=8, dropout_prob=0.2)
+        self.self_att = SelfAttention(hidden_size=2 * self.hidden_size, num_attention_heads=8, dropout_prob=0.5)
 
         self.fin_lin = torch.nn.Linear(2 * self.hidden_size, output_size)
 
@@ -430,11 +430,8 @@ class ExtractionNet_mrc(torch.nn.Module):
 
         question_rep = self.q_lin(question_embedding)
 
-        # question_rep = question_rep.reshape(-1, self.hidden_size)
-        # question_rep = self.q_bn(question_rep)
-        # question_rep = question_rep.reshape(-1, 100, self.hidden_size)
-
         question_rep = F.relu(question_rep)
+
 
 
         if self.have_tag:
