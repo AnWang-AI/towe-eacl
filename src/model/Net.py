@@ -404,6 +404,7 @@ class ExtractionNet_mrc(torch.nn.Module):
         else:
             x = target_embedding
 
+        print(batch.target)
 
         aspect = batch.aspect
         if self.word_emb_mode == "w2v":
