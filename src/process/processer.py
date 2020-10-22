@@ -114,6 +114,7 @@ class Processer():
             for idx in range(target.shape[0]):
                 if target[idx] == 1 or target[idx] == 2:
                     aspect.append(text[idx])
+            aspect.append("describe")
             aspects.append(aspect)
 
         if self.word_emb_mode == "w2v":
