@@ -430,9 +430,9 @@ class ExtractionNet_mrc(torch.nn.Module):
         x = F.relu(x)
 
         x = torch.cat([x, question_rep], dim=-1)
-        print(x.shape)
-        print(torch.ones(x.shape).cuda().shape)
-        x = self.self_att(x, torch.ones(x.shape).cuda())
+        # print(x.shape)
+        # print(torch.ones(x.shape).cuda().shape)
+        x = self.self_att(x, torch.ones(x.shape[:2]).cuda())
 
         x = F.relu(x)
         x = self.fin_lin(x)
