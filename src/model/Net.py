@@ -435,9 +435,10 @@ class ExtractionNet_mrc(torch.nn.Module):
         # print(batch.aspect.reshape(-1, 30))
         # print(x.shape)
         # print(torch.ones(x.shape).cuda().shape)
-        x = self.self_att(x, torch.ones(x.shape[:2]).cuda())
+        x = self.self_att(x, torch.ones(x.shape[:2]).cuda())+x
 
         x = F.relu(x)
+
         x = self.fin_lin(x)
 
         output = F.log_softmax(x, dim=-1)
