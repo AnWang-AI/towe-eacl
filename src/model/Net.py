@@ -461,8 +461,8 @@ class ExtractionNet_mrc(torch.nn.Module):
         target = (batch.target == 1).long() + (batch.target == 2).long()
         target = target.reshape(-1, 100, 1)
         aspect_embedding = x * target
-        aspect_length = (target > 0).sum(-1).reshape(-1, 1)
-        print(aspect_embedding.shape, aspect_length.shape)
+        aspect_length = (target > 0).sum(-1).reshape(-1, 100, 1)
+        # print(aspect_embedding.shape, aspect_length.shape)
         question_embedding = aspect_embedding.sum(axis=1) / aspect_length
 
 
