@@ -402,12 +402,12 @@ class ExtractionNet_mrc(torch.nn.Module):
         else:
             x = target_embedding
 
-        # x = word_embedding
 
         aspect = batch.aspect
         if self.word_emb_mode == "w2v":
             aspect_embedding = self.word_embed(aspect)
             aspect_embedding = aspect_embedding.reshape(-1, 30, self.word_embed_dim)
+            aspect = aspect.reshape(-1, 30)
         else:
             aspect = aspect.reshape(-1, 30)
             if trian_bert:
@@ -416,8 +416,9 @@ class ExtractionNet_mrc(torch.nn.Module):
                 with torch.no_grad():
                     aspect_embedding = self.embedding_model(aspect)[0]
 
-
-        question_embedding = aspect_embedding.mean(axis=1)
+        aspect_length = (aspect>0).sum(-1)
+        print(aspect_length.shape, aspect_length)
+        question_embedding = aspect_embedding.sum(axis=1)/aspect_length
         # question_embedding = aspect_embedding.max(axis=1).values
 
         question_embedding = question_embedding.unsqueeze(dim=1)
