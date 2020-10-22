@@ -407,7 +407,7 @@ class ExtractionNet_mrc(torch.nn.Module):
         aspect = batch.aspect
         if self.word_emb_mode == "w2v":
             aspect_embedding = self.word_embed(aspect)
-            aspect_embedding = aspect_embedding.reshape(-1, 30, self.aspect_embedding)
+            aspect_embedding = aspect_embedding.reshape(-1, 30, self.word_embed_dim)
         else:
             aspect = aspect.reshape(-1, 30)
             if trian_bert:
