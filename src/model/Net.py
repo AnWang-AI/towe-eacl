@@ -338,6 +338,8 @@ class ExtractionNet_mrc(torch.nn.Module):
         self.hidden_size = self.model_config['hidden_size']
         self.q_lin = torch.nn.Linear(self.word_embed_dim, self.hidden_size)
 
+        self.q_bn = torch.nn.BatchNorm1d(self.hidden_size, eps=1e-05, momentum=0.1, affine=True)
+
         self.graph_mode = graph_mode
 
         if graph_mode == True:
@@ -427,7 +429,7 @@ class ExtractionNet_mrc(torch.nn.Module):
         question_embedding = F.relu(question_embedding)
         question_rep = self.q_lin(question_embedding)
         question_rep = F.relu(question_rep)
-        question_rep = F.dropout(question_rep, 0.5)
+        question_rep = self.q_bn(question_rep)
 
         if self.have_tag:
             tag_embedding = self.tag_embedding(batch.tag)
