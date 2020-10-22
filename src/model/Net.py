@@ -355,10 +355,10 @@ class ExtractionNet_mrc(torch.nn.Module):
 
         self.self_att = SelfAttention(hidden_size=2 * self.hidden_size, num_attention_heads=8, dropout_prob=0.2)
 
-        # self.fin_lin = torch.nn.Linear(2 * self.hidden_size, output_size)
+        self.fin_lin = torch.nn.Linear(2 * self.hidden_size, output_size)
 
-        self.fin_net = BiLSTMNet(input_dim=2 * self.hidden_size, ouput_dim=output_size,
-                                hidden_size=self.hidden_size, bidirectional=False)
+        # self.fin_net = BiLSTMNet(input_dim=2 * self.hidden_size, ouput_dim=output_size,
+        #                         hidden_size=self.hidden_size, bidirectional=False)
 
         self.init_weight()
 
@@ -373,6 +373,9 @@ class ExtractionNet_mrc(torch.nn.Module):
 
         if self.have_tag:
             torch.nn.init.xavier_normal_(self.tag_embedding.weight)
+
+        torch.nn.init.xavier_normal_(self.q_lin.weight)
+        torch.nn.init.xavier_normal_(self.fin_lin.weight)
 
     def forward(self, batch, trian_bert=False):
 
@@ -441,7 +444,7 @@ class ExtractionNet_mrc(torch.nn.Module):
         # print(torch.ones(x.shape).cuda().shape)
         x = self.self_att(x, torch.ones(x.shape[:2]).cuda())+x
         x = F.relu(x)
-        x = self.fin_net(x)
+        x = self.fin_lin(x)
 
         output = F.log_softmax(x, dim=-1)
 
