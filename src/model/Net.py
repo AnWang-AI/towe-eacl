@@ -427,8 +427,9 @@ class ExtractionNet_mrc(torch.nn.Module):
 
         x = F.relu(x)
 
-        x = torch.cat([x, question_rep], dim=-1)
+        print(x.shape)
 
+        x = torch.cat([x, question_rep], dim=-1)
         x = self.fin_lin(x)
 
 
