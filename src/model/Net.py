@@ -404,9 +404,6 @@ class ExtractionNet_mrc(torch.nn.Module):
         else:
             x = target_embedding
 
-        target = (batch.target == 1).long() + (batch.target == 2).long()
-        print(target.shape)
-
         aspect = batch.aspect
         if self.word_emb_mode == "w2v":
             aspect_embedding = self.word_embed(aspect)
@@ -460,6 +457,11 @@ class ExtractionNet_mrc(torch.nn.Module):
             x = self.MainNet(x)
 
         x = F.relu(x)
+
+        target = (batch.target == 1).long() + (batch.target == 2).long()
+        target = target.reshape(-1, 100)
+        print(x.shape, target.shape)
+        aspect_embedding = x * target
 
         x = torch.cat([x, question_rep], dim=-1)
         # print(batch.aspect.reshape(-1, 30))
