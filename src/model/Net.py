@@ -404,7 +404,7 @@ class ExtractionNet_mrc(torch.nn.Module):
         else:
             x = target_embedding
 
-        target = batch.target == 1 + batch.target == 2
+        target = (batch.target == 1).long() + (batch.target == 2).long()
         print(target)
 
         aspect = batch.aspect
