@@ -13,23 +13,27 @@ from src.model.trainer import Trainer, set_random_seed, load_data
 
 sys.path.append('./')
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--config_path', type=str, default='./src/model/conf_bert_gnn_lstm.ini')
+parser.add_argument('--data_path', type=str, default='')
+parser.add_argument('--epochs', type=int, default=None)
+parser.add_argument('--train_batch_size', type=int, default=None)
+parser.add_argument('--load_model_name', type=str, default='')
+parser.add_argument('--save_model_name', type=str, default='')
+parser.add_argument('--eval_frequency', type=int, default=5)
+parser.add_argument('--random_seed', type=int, default=1)
+args = parser.parse_args()
+
 if __name__ == "__main__":
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    fitlog.commit(__file__)  # auto commit your codes
-    fitlog.add_hyper_in_file(__file__)  # record your hyperparameters
+    # fitlog.commit(__file__)    # 自动 commit 你的代码
+    fitlog.set_log_dir("logs/")  # 设定日志存储的目录
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--config_path', type=str, default='./src/model/conf_bert_gnn_lstm.ini')
-    parser.add_argument('--data_path', type=str, default='')
-    parser.add_argument('--epochs', type=int, default=None)
-    parser.add_argument('--train_batch_size', type=int, default=None)
-    parser.add_argument('--load_model_name', type=str, default='')
-    parser.add_argument('--save_model_name', type=str, default='')
-    parser.add_argument('--eval_frequency', type=int, default=5)
-    parser.add_argument('--random_seed', type=int, default=1)
-    args = parser.parse_args()
+    fitlog.add_hyper(args)  # 通过这种方式记录ArgumentParser的参数
+    fitlog.add_hyper_in_file(__file__)  #  记录本文件中写死的超参数
+
 
     config = Config(args.config_path)
     config.reset_config(args)
