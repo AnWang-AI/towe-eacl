@@ -6,7 +6,7 @@ export PYTHONPATH=./
 ## 在服务器上运行
 
 # LSTM
-CUDA_VISIBLE_DEVICES=1 python src/model/trainer.py \
+CUDA_VISIBLE_DEVICES=0 python src/model/trainer.py \
 --config_path ./src/model/config/conf_lstm.ini \
 --data_path ./data/14res \
 --save_model_name models/Model_Tag_BiLSTM.ckpt \
