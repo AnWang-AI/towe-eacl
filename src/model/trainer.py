@@ -21,6 +21,9 @@ from src.tools.TOWE_utils import score_BIO
 
 from src.model.ConfigParser import Config
 
+import fitlog
+
+
 sys.path.append('./')
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -107,7 +110,7 @@ def load_data(data_path, train_batch_size=1, val_batch_size=1, use_bert=False, b
 
 class Trainer():
 
-    def __init__(self, loader, model, criterion, optimizer, args, config):
+    def __init__(self, loader, model, criterion, optimizer, args, config, fitlog_flag=False):
         self.args = args
         self.config = config
         self.default_config = config.config_dicts['default']
@@ -118,6 +121,7 @@ class Trainer():
         self.model = model.to(device)
         self.criterion = criterion.to(device)
         self.optimizer = optimizer
+        self.fitlog_flag = fitlog_flag
 
     def eval(self, detail=False, dataset="valid"):
         # Transfer model mode from train to eval.
@@ -204,9 +208,9 @@ class Trainer():
         # Save train info to log file.
         self.save_log(BIO_info, self.model_config['val_log'])
 
-
         print('-' * 40)
         self.model.train()
+
         return BIO_score
 
     def train(self, best_accuracy=None):
@@ -262,7 +266,6 @@ class Trainer():
 
                 scores = self.model(datas, trian_bert)
 
-
                 scores = scores.cpu()
                 scores = torch.masked_select(scores.reshape(-1, 100, num_class), all_mask.reshape(-1, 100, 1).expand(-1, 100, num_class)>0)
                 scores = scores.to(device)
@@ -305,6 +308,9 @@ class Trainer():
             # Epoch average loss and accuracy.
             loss = total_loss / total_num
 
+            if self.fitlog_flag:
+                fitlog.add_loss(loss, name="Loss", step=i)
+
             # accuracy = self.metric_f1_score(y, pred, detail=False)
 
             ie_score, ie_precision, ie_recall = self.IE_score(y, pred)
@@ -318,6 +324,10 @@ class Trainer():
             pred_list = [pred.tolist() for pred in preds]
             label_list = [y.tolist() for y in ys]
             score_dict = score_BIO(pred_list, label_list, ignore_index=3)
+
+            if self.fitlog_flag:
+                fitlog.add_metric({"dev": {"BIO F1": score_dict["f1"]}}, step=i)
+
             BIO_info = 'Epoch: {} Train: loss: {:.4f} BIO precision: {:.4f}, BIO recall: {:.4f}, BIO f1: {:.4f}'.format(epoch_index, loss, score_dict["precision"],
                                                                                           score_dict["recall"],
                                                                                           score_dict["f1"])
@@ -329,11 +339,16 @@ class Trainer():
             # Eval every {eval_frequency} train epoch
             if epoch_index % self.args.eval_frequency == 0:
                 eval_score = self.eval(detail=False, dataset="valid")
-                self.eval(detail=False, dataset="test")
+                test_score = self.eval(detail=False, dataset="test")
                 # Save best model
                 if eval_score > best_accuracy:
                     tprint('Best model so far, best eval_score {:.4f} -> {:.4f}'.format(best_accuracy, eval_score))
                     best_accuracy = eval_score
+
+                    if self.fitlog_flag:
+                        fitlog.add_best_metric({"dev": {"best BIO F1": best_accuracy}})
+                        fitlog.add_best_metric({"test": {"BIO F1": test_score}})
+
                     self.save_model(epoch_index, loss, eval_score, self.args.save_model_name)
 
         self.config.print_config()
