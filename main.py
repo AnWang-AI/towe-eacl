@@ -11,6 +11,9 @@ from src.model.ConfigParser import Config
 
 from src.model.trainer import Trainer, set_random_seed, load_data
 
+from src.model.Net import ExtractionNet, ExtractionNet_crf, ExtractionNet_mrc
+
+
 sys.path.append('./')
 
 parser = argparse.ArgumentParser()
