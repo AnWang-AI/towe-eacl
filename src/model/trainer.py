@@ -268,7 +268,7 @@ class Trainer():
                 scores = self.model(datas, trian_bert)
 
                 scores = scores.cpu()
-                scores = torch.masked_select(scores.reshape(-1, 100, self.num_class), all_mask.reshape(-1, 100, 1).expand(-1, 100, num_class)>0)
+                scores = torch.masked_select(scores.reshape(-1, 100, self.num_class), all_mask.reshape(-1, 100, 1).expand(-1, 100, self.num_class)>0)
                 scores = scores.to(device)
 
                 scores = scores.view(-1, self.num_class)
