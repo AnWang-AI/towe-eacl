@@ -327,7 +327,7 @@ class Trainer():
             score_dict = score_BIO(pred_list, label_list, ignore_index=3)
 
             if self.fitlog_flag:
-                fitlog.add_metric({"dev": {"BIO F1": score_dict["f1"]}}, step=i)
+                fitlog.add_metric({"train": {"BIO F1": score_dict["f1"]}}, step=i)
 
             BIO_info = 'Epoch: {} Train: loss: {:.4f} BIO precision: {:.4f}, BIO recall: {:.4f}, BIO f1: {:.4f}'.format(epoch_index, loss, score_dict["precision"],
                                                                                           score_dict["recall"],
@@ -339,18 +339,21 @@ class Trainer():
 
             # Eval every {eval_frequency} train epoch
             if epoch_index % self.args.eval_frequency == 0:
-                eval_score = self.eval(detail=False, dataset="valid")
+                dev_score = self.eval(detail=False, dataset="valid")
+                if self.fitlog_flag:
+                    fitlog.add_metric({"dev": {"BIO F1": dev_score}}, step=i)
+
                 test_score = self.eval(detail=False, dataset="test")
                 # Save best model
-                if eval_score > best_accuracy:
-                    tprint('Best model so far, best eval_score {:.4f} -> {:.4f}'.format(best_accuracy, eval_score))
-                    best_accuracy = eval_score
+                if dev_score > best_accuracy:
+                    tprint('Best model so far, best dev_score {:.4f} -> {:.4f}'.format(best_accuracy, dev_score))
+                    best_accuracy = dev_score
 
                     if self.fitlog_flag:
                         fitlog.add_best_metric({"dev": {"best BIO F1": best_accuracy}})
                         fitlog.add_best_metric({"test": {"BIO F1": test_score}})
 
-                    self.save_model(epoch_index, loss, eval_score, self.args.save_model_name)
+                    self.save_model(epoch_index, loss, dev_score, self.args.save_model_name)
 
         self.config.print_config()
         self.load_model(model_path=self.model_config['save_model_name'])
