@@ -233,9 +233,13 @@ class Trainer():
             if self.default_config['use_bert']:  ## 使用bert的时候
                 start_to_train_bert_epoch = 10
                 if i >= start_to_train_bert_epoch:
-                    for param_group in self.optimizer.param_groups:
-                        param_group['lr'] = 1e-5
+
+                    self.optimizer = torch.optim.Adam(model.parameters(), lr=1e-5, weight_decay=0)
+
+                    # for param_group in self.optimizer.param_groups:
+                    #     param_group['lr'] = 1e-5
                     trian_bert = True
+
                 else:
                     trian_bert = False
             # else:   ## 不适用bert的时候
