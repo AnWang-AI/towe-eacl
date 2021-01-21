@@ -25,15 +25,15 @@ CUDA_VISIBLE_DEVICES=0 python src/model/trainer.py \
 CUDA_VISIBLE_DEVICES=0 python src/model/trainer.py \
 --config_path ./src/model/config/conf_w2v_gnn_lstm.ini \
 --data_path ./data/16res \
---epoch 50 --train_batch_size 32 \
+--epoch 50 --train_batch_size 16 \
 --eval_frequency 2 \
 --save_model_name models/Model_ExtractionNet__with_graph_16res.ckpt
 
 # bert graph LSTM
 CUDA_VISIBLE_DEVICES=0 python src/model/trainer.py \
 --config_path ./src/model/config/conf_bert_gnn_lstm.ini \
---data_path ./data/14lap \
---epoch 60 --train_batch_size 32 \
+--data_path ./data/14res \
+--epoch 60 --train_batch_size 16 \
 --eval_frequency 2 \
---save_model_name models/Model_ExtractionNet_with_bert_with_graph_14lap.ckpt
+--save_model_name models/Model_ExtractionNet_with_bert_with_graph_14res.ckpt
 
