@@ -7,7 +7,7 @@ export dataset=14res
 #  echo "remove the dir ./data/$dataset/processed"
 #fi
 
-export num_mid_layers=0
+export num_mid_layers=6
 
 CUDA_VISIBLE_DEVICES=0 python main.py \
 --config_path ./src/model/config/conf_$model.ini \
