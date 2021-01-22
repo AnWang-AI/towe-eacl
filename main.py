@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
     num_class = 4
 
-    set_random_seed()
+    set_random_seed(args.random_seed)
 
     loader = load_data(preprocess_config['data_path'],
                        model_config['train_batch_size'],

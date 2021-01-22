@@ -26,31 +26,11 @@ import fitlog
 
 sys.path.append('./')
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--config_path', type=str, default='./src/model/conf_bert_gnn_lstm.ini')
-parser.add_argument('--data_path', type=str, default='')
-parser.add_argument('--epochs', type=int, default=None)
-parser.add_argument('--num_mid_layers', type=int, default=None)
-parser.add_argument('--num_heads', type=int, default=None)
-parser.add_argument('--train_batch_size', type=int, default=None)
-parser.add_argument('--load_model_name', type=str, default='')
-parser.add_argument('--save_model_name', type=str, default='')
-parser.add_argument('--eval_frequency', type=int, default=5)
-parser.add_argument('--random_seed', type=int, default=1)
-args = parser.parse_args()
-
-config = Config(args.config_path)
-config.reset_config(args)
-config_dict = config.config_dicts
-default_config = config.config_dicts['default']
-preprocess_config = config.config_dicts['preprocess']
-model_config = config.config_dicts['model']
 
 
 def set_random_seed(seed = 999):
-    seed = args.random_seed
+    seed = seed
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -443,9 +423,31 @@ class Trainer():
 
 if __name__ == "__main__":
 
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config_path', type=str, default='./src/model/conf_bert_gnn_lstm.ini')
+    parser.add_argument('--data_path', type=str, default='')
+    parser.add_argument('--epochs', type=int, default=None)
+    parser.add_argument('--num_mid_layers', type=int, default=None)
+    parser.add_argument('--num_heads', type=int, default=None)
+    parser.add_argument('--train_batch_size', type=int, default=None)
+    parser.add_argument('--load_model_name', type=str, default='')
+    parser.add_argument('--save_model_name', type=str, default='')
+    parser.add_argument('--eval_frequency', type=int, default=5)
+    parser.add_argument('--random_seed', type=int, default=1)
+    args = parser.parse_args()
+
+    config = Config(args.config_path)
+    config.reset_config(args)
+    config_dict = config.config_dicts
+    default_config = config.config_dicts['default']
+    preprocess_config = config.config_dicts['preprocess']
+    model_config = config.config_dicts['model']
+
     num_class = model_config["num_class"]
 
-    set_random_seed()
+    set_random_seed(args.random_seed)
 
     loader = load_data(preprocess_config['data_path'],
                        model_config['train_batch_size'],
