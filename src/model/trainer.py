@@ -129,13 +129,6 @@ class Trainer():
         # Transfer model mode from train to eval.
         self.model.eval()
 
-        # User GPU.
-        # if self.cuda:
-        #     self.model.cuda()
-        #     print('Eval by GPU ...')
-        # else:
-        #     print('Eval by CPU ...')
-
         assert dataset in ["valid", "test"]
         if dataset == "valid":
             print("'Eval by Valid ...'")
@@ -213,7 +206,7 @@ class Trainer():
         print('-' * 40)
         self.model.train()
 
-        return BIO_score
+        return BIO_score, score_dict["precision"], score_dict["recall"]
 
     def train(self, best_accuracy=None):
 
@@ -344,11 +337,13 @@ class Trainer():
 
             # Eval every {eval_frequency} train epoch
             if epoch_index % self.args.eval_frequency == 0:
-                dev_score = self.eval(detail=False, dataset="valid")
+                dev_score, dev_p, dev_r = self.eval(detail=False, dataset="valid")
                 if self.fitlog_flag:
-                    fitlog.add_metric({"dev": {"BIO F1": dev_score}}, step=i)
+                    fitlog.add_metric({"dev": {"BIO p": dev_p, "BIO r": dev_r, "BIO F1": dev_score}}, step=i)
 
-                test_score = self.eval(detail=False, dataset="test")
+                test_score, test_p, test_r = self.eval(detail=False, dataset="test")
+                if self.fitlog_flag:
+                    fitlog.add_metric({"test": {"BIO p": test_p, "BIO r": test_r, "BIO F1": test_score}}, step=i)
                 # Save best model
                 if dev_score > best_accuracy:
                     tprint('Best model so far, best dev_score {:.4f} -> {:.4f}'.format(best_accuracy, dev_score))

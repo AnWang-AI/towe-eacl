@@ -12,7 +12,7 @@ export num_mid_layers=8
 CUDA_VISIBLE_DEVICES=0 python main.py \
 --config_path ./src/model/config/conf_$model.ini \
 --data_path ./data/$dataset \
---epoch 50 --train_batch_size 16 \
+--epoch 40 --train_batch_size 16 \
 --num_mid_layers $num_mid_layers \
 --eval_frequency 2 \
 --save_model_name models/Model_ExtractionNet_$model_mid_layer_num_$num_mid_layers_$dataset.ckpt
