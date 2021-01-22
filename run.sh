@@ -7,12 +7,15 @@ export dataset=14res
 #  echo "remove the dir ./data/$dataset/processed"
 #fi
 
-export num_mid_layers=10
+export num_mid_layers=4
+export num_heads=8
+
 
 CUDA_VISIBLE_DEVICES=0 python main.py \
 --config_path ./src/model/config/conf_$model.ini \
 --data_path ./data/$dataset \
 --epoch 40 --train_batch_size 16 \
 --num_mid_layers $num_mid_layers \
+--num_heads $num_heads \
 --eval_frequency 2 \
 --save_model_name models/Model_ExtractionNet_$model_mid_layer_num_$num_mid_layers_$dataset.ckpt
