@@ -26,6 +26,7 @@ CUDA_VISIBLE_DEVICES=0 python src/model/trainer.py \
 --config_path ./src/model/config/conf_w2v_gnn_lstm.ini \
 --data_path ./data/16res \
 --epoch 50 --train_batch_size 16 \
+--num_mid_layers 4 \
 --eval_frequency 2 \
 --save_model_name models/Model_ExtractionNet__with_graph_16res.ckpt
 

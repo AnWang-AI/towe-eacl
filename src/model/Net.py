@@ -70,7 +70,10 @@ class ExtractionNet(torch.nn.Module):
 
         if graph_mode == True:
             mainnet_name = self.model_config['mainnet']
-            self.MainNet = eval(mainnet_name)(num_features=self.feature_dim, num_classes=self.hidden_size)
+            if mainnet_name == "DeepARGCNNet":
+                self.MainNet = DeepARGCNNet(num_features=self.feature_dim, num_classes=self.hidden_size, num_mid_layers=self.model_config['num_mid_layers'])
+            else:
+                self.MainNet = eval(mainnet_name)(num_features=self.feature_dim, num_classes=self.hidden_size)
 
             if self.have_word_emb:
                 self.LSTM_input_dim = self.hidden_size + self.word_embed_dim

@@ -42,6 +42,8 @@ class Config:
             self.config_dicts['model']['train_batch_size'] = args.train_batch_size
         if args.epochs:
             self.config_dicts['model']['epochs'] = args.epochs
+        if args.num_mid_layers:
+            self.config_dicts['model']['num_mid_layers'] = args.num_mid_layers
 
     def print_config(self, output_file=None):
         dump_string = "-" * 15 + " dump begin " + "-" * 15 + "\n"
