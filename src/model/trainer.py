@@ -26,8 +26,7 @@ import fitlog
 
 sys.path.append('./')
 
-
-
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def set_random_seed(seed = 999):
     seed = seed
@@ -422,8 +421,6 @@ class Trainer():
             f.writelines('{}\n'.format(info))
 
 if __name__ == "__main__":
-
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_path', type=str, default='./src/model/conf_bert_gnn_lstm.ini')
