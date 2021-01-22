@@ -18,4 +18,4 @@ CUDA_VISIBLE_DEVICES=0 python main.py \
 --num_mid_layers $num_mid_layers \
 --num_heads $num_heads \
 --eval_frequency 2 \
---save_model_name models/Model_ExtractionNet_$model_mid_layer_num_$num_mid_layers_$dataset.ckpt
+--save_model_name models/Model-ExtractionNet-layer-num-$num_mid_layers-heads-$num_heads-dataset-$dataset.ckpt
