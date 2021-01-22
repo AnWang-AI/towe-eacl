@@ -2,7 +2,7 @@ export PYTHONPATH=./
 export model=w2v_gnn_lstm
 export dataset=16res
 
-CUDA_VISIBLE_DEVICES=0 python src/main.py \
+CUDA_VISIBLE_DEVICES=0 python main.py \
 --config_path ./src/model/config/conf_$model.ini \
 --data_path ./data/$dataset \
 --epoch 50 --train_batch_size 16 \
