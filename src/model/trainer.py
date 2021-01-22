@@ -350,8 +350,8 @@ class Trainer():
                     best_accuracy = dev_score
 
                     if self.fitlog_flag:
-                        fitlog.add_best_metric({"dev": {"best BIO F1": best_accuracy}})
-                        fitlog.add_best_metric({"test": {"BIO F1": test_score}})
+                        fitlog.add_best_metric({"dev": {"BIO p": dev_p, "BIO r": dev_r, "BIO F1": best_accuracy}})
+                        fitlog.add_best_metric({"test": {"BIO p": test_p, "BIO r": test_r, "BIO F1": test_score}})
 
                     self.save_model(epoch_index, loss, dev_score, self.args.save_model_name)
 
