@@ -21,13 +21,15 @@ parser.add_argument('--config_path', type=str, default='./src/model/conf_bert_gn
 parser.add_argument('--data_path', type=str, default='')
 parser.add_argument('--epochs', type=int, default=None)
 parser.add_argument('--num_mid_layers', type=int, default=None)
-parser.add_argument('--num_heads', type=int, default=None)
+parser.add_argument('--num_heads', type=int, default=4)
 parser.add_argument('--train_batch_size', type=int, default=None)
 parser.add_argument('--load_model_name', type=str, default='')
 parser.add_argument('--save_model_name', type=str, default='')
 parser.add_argument('--eval_frequency', type=int, default=5)
 parser.add_argument('--random_seed', type=int, default=1)
 args = parser.parse_args()
+
+print(args.num_heads)
 
 if __name__ == "__main__":
 
