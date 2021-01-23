@@ -8,7 +8,7 @@ export dataset=14res
 #fi
 
 export num_mid_layers=4
-export num_heads=14
+export num_heads=8
 
 
 CUDA_VISIBLE_DEVICES=0 python main.py \
