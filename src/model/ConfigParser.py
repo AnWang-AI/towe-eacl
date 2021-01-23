@@ -42,12 +42,14 @@ class Config:
             self.config_dicts['model']['train_batch_size'] = args.train_batch_size
         if args.epochs:
             self.config_dicts['model']['epochs'] = args.epochs
-        if args.num_mid_layers is not None:
-            self.config_dicts['model']['num_mid_layers'] = args.num_mid_layers
-        if args.num_heads is not None:
-            self.config_dicts['model']['num_heads'] = args.num_heads
-        if args.threshold is not None:
-            self.config_dicts['preprocess']['threshold'] = args.threshold
+
+        if self.config_dicts['default']['build_graph']:
+            if args.num_mid_layers is not None:
+                self.config_dicts['model']['num_mid_layers'] = args.num_mid_layers
+            if args.num_heads is not None:
+                self.config_dicts['model']['num_heads'] = args.num_heads
+            if args.threshold is not None:
+                self.config_dicts['preprocess']['threshold'] = args.threshold
 
     def print_config(self, output_file=None):
         dump_string = "-" * 15 + " dump begin " + "-" * 15 + "\n"
