@@ -23,6 +23,8 @@ class Grapher():
 
         self.distance_gate = 2
 
+        print("distance_gate:", self.distance_gate)
+
     def build_dep_graph_from_text(self, text):
 
         text = text.lower()
