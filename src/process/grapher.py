@@ -21,7 +21,7 @@ class Grapher():
         assert type(tag_map) == dict
         self.tag_map = tag_map["tag_to_id"]
 
-        self.distance_gate = 2
+        self.distance_gate = 3
 
         print("distance_gate:", self.distance_gate)
 
