@@ -21,7 +21,7 @@ class Grapher():
         assert type(tag_map) == dict
         self.tag_map = tag_map["tag_to_id"]
 
-        self.distance_gate = 1
+        self.distance_gate = 2
 
     def build_dep_graph_from_text(self, text):
 
