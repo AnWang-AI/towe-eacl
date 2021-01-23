@@ -9,6 +9,7 @@ fi
 
 export num_mid_layers=4
 export num_heads=8
+export threshold=1
 
 
 CUDA_VISIBLE_DEVICES=0 python main.py \
@@ -17,5 +18,6 @@ CUDA_VISIBLE_DEVICES=0 python main.py \
 --epoch 40 --train_batch_size 16 \
 --num_mid_layers $num_mid_layers \
 --num_heads $num_heads \
+--threshold $threshold \
 --eval_frequency 2 \
---save_model_name models/Model-ExtractionNet-layer-num-$num_mid_layers-heads-$num_heads-dataset-$dataset.ckpt
+--save_model_name models/Model-ExtractionNet-layer-num-$num_mid_layers-heads-$num_heads-threshold-$threshold-dataset-$dataset.ckpt

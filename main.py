@@ -22,6 +22,7 @@ parser.add_argument('--data_path', type=str, default='')
 parser.add_argument('--epochs', type=int, default=None)
 parser.add_argument('--num_mid_layers', type=int, default=None)
 parser.add_argument('--num_heads', type=int, default=None)
+parser.add_argument('--threshold', type=int, default=None)
 parser.add_argument('--train_batch_size', type=int, default=None)
 parser.add_argument('--load_model_name', type=str, default='')
 parser.add_argument('--save_model_name', type=str, default='')
@@ -52,6 +53,7 @@ if __name__ == "__main__":
     set_random_seed(args.random_seed)
 
     loader = load_data(preprocess_config['data_path'],
+                       preprocess_config,
                        model_config['train_batch_size'],
                        model_config['val_batch_size'],
                        default_config['use_bert'],

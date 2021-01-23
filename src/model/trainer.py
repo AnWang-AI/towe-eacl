@@ -39,7 +39,7 @@ def set_random_seed(seed = 999):
     torch.backends.cudnn.enable = False
 
 
-def load_data(data_path, train_batch_size=1, val_batch_size=1, use_bert=False, build_graph=False):
+def load_data(data_path, config, train_batch_size=1, val_batch_size=1, use_bert=False, build_graph=False):
 
     if use_bert:
         if build_graph:
@@ -61,9 +61,9 @@ def load_data(data_path, train_batch_size=1, val_batch_size=1, use_bert=False, b
             word_emb_mode = 'w2v'
             build_graph = False
 
-    train_dataset = TOWEDataset(data_path, 'train', word_emb_mode=word_emb_mode, build_graph=build_graph)
-    val_dataset = TOWEDataset(data_path, 'valid', word_emb_mode=word_emb_mode, build_graph=build_graph)
-    test_dataset = TOWEDataset(data_path, 'test', word_emb_mode=word_emb_mode, build_graph=build_graph)
+    train_dataset = TOWEDataset(data_path, config, 'train', word_emb_mode=word_emb_mode, build_graph=build_graph)
+    val_dataset = TOWEDataset(data_path, config, 'valid', word_emb_mode=word_emb_mode, build_graph=build_graph)
+    test_dataset = TOWEDataset(data_path, config, 'test', word_emb_mode=word_emb_mode, build_graph=build_graph)
 
     # new_dataset = []
     # for datas in train_dataset:
@@ -428,6 +428,7 @@ if __name__ == "__main__":
     parser.add_argument('--epochs', type=int, default=None)
     parser.add_argument('--num_mid_layers', type=int, default=None)
     parser.add_argument('--num_heads', type=int, default=None)
+    parser.add_argument('--threshold', type=int, default=None)
     parser.add_argument('--train_batch_size', type=int, default=None)
     parser.add_argument('--load_model_name', type=str, default='')
     parser.add_argument('--save_model_name', type=str, default='')
@@ -447,6 +448,7 @@ if __name__ == "__main__":
     set_random_seed(args.random_seed)
 
     loader = load_data(preprocess_config['data_path'],
+                       preprocess_config,
                        model_config['train_batch_size'],
                        model_config['val_batch_size'],
                        default_config['use_bert'],

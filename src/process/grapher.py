@@ -6,7 +6,7 @@ from torch_geometric.data import Data
 
 class Grapher():
 
-    def __init__(self, dep_map_path="./src/process/dep_map.json", tag_map_path="./src/process/tag_map.json"):
+    def __init__(self, dep_map_path="./src/process/dep_map.json", tag_map_path="./src/process/tag_map.json", distance_gate = 1):
         # self.parser = spacy.load('./data/spacy_model/en_core_web_sm-2.2.5')
         self.parser = spacy.load('en_core_web_sm')
 
@@ -21,7 +21,7 @@ class Grapher():
         assert type(tag_map) == dict
         self.tag_map = tag_map["tag_to_id"]
 
-        self.distance_gate = 3
+        self.distance_gate = distance_gate
 
         print("distance_gate:", self.distance_gate)
 
