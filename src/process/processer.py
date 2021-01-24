@@ -20,7 +20,7 @@ sys.path.append('..')
 
 
 class Processer():
-    def __init__(self, data_path, word_emb_mode="w2v", build_graph=True):
+    def __init__(self, data_path, word_emb_mode="w2v", build_graph=True, distance_gate=1):
         self.set_random_seed()
 
         self.data_path = data_path
@@ -45,7 +45,7 @@ class Processer():
 
         self.build_graph_mode = build_graph
         if build_graph:
-            self.grapher = Grapher()
+            self.grapher = Grapher(distance_gate=distance_gate)
 
     def set_random_seed(self):
         seed = 999

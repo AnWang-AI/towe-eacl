@@ -70,7 +70,10 @@ class ExtractionNet(torch.nn.Module):
 
         if graph_mode == True:
             mainnet_name = self.model_config['mainnet']
-            self.MainNet = eval(mainnet_name)(num_features=self.feature_dim, num_classes=self.hidden_size)
+            if mainnet_name == "DeepARGCNNet":
+                self.MainNet = DeepARGCNNet(num_features=self.feature_dim, num_classes=self.hidden_size, num_mid_layers=self.model_config['num_mid_layers'], num_heads=self.model_config['num_heads'])
+            else:
+                self.MainNet = eval(mainnet_name)(num_features=self.feature_dim, num_classes=self.hidden_size)
 
             if self.have_word_emb:
                 self.LSTM_input_dim = self.hidden_size + self.word_embed_dim
@@ -572,7 +575,7 @@ class RGCNNet(torch.nn.Module):
 
 
 class DeepARGCNNet(torch.nn.Module):
-    def __init__(self, num_features=768, num_classes=9, edge_feature_dim=2, num_mid_layers=3):
+    def __init__(self, num_features=768, num_classes=9, edge_feature_dim=2, num_mid_layers=3, num_heads=8):
         super(DeepARGCNNet, self).__init__()
 
         self.num_features = num_features
@@ -589,16 +592,17 @@ class DeepARGCNNet(torch.nn.Module):
 
         # self.norm_layer_list.append(torch.nn.LayerNorm(num_features, eps=1e-05))
 
+
         self.norm_layer_list.append(torch.nn.BatchNorm1d(num_features, eps=1e-05, momentum=0.1, affine=True))
-        self.conv_layer_list.append(conv_layer(num_features, self.hidden_dim, edge_feature_dim=edge_feature_dim))
+        self.conv_layer_list.append(conv_layer(num_features, self.hidden_dim, edge_feature_dim=edge_feature_dim, num_heads=num_heads))
 
         for i in range(self.num_mid_layers):
             # self.norm_layer_list.append(torch.nn.LayerNorm(self.hidden_dim, eps=1e-05))
             self.norm_layer_list.append(torch.nn.BatchNorm1d(self.hidden_dim, eps=1e-05, momentum=0.1, affine=True))
-            self.conv_layer_list.append(conv_layer(self.hidden_dim, self.hidden_dim, edge_feature_dim=edge_feature_dim))
+            self.conv_layer_list.append(conv_layer(self.hidden_dim, self.hidden_dim, edge_feature_dim=edge_feature_dim, num_heads=num_heads))
 
         self.norm_layer_list.append(torch.nn.BatchNorm1d(self.hidden_dim, eps=1e-05, momentum=0.1, affine=True))
-        self.conv_layer_list.append(conv_layer(self.hidden_dim, num_classes, edge_feature_dim=edge_feature_dim))
+        self.conv_layer_list.append(conv_layer(self.hidden_dim, num_classes, edge_feature_dim=edge_feature_dim, num_heads=num_heads))
 
     def forward(self, x, edge_index, edge_type, edge_distance):
 

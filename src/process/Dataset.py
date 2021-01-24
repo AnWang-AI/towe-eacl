@@ -10,10 +10,11 @@ from src.process.processer import Processer
 
 
 class TOWEDataset(InMemoryDataset):
-    def __init__(self, root, split='train', word_emb_mode='w2v', build_graph=False, transform=None, pre_transform=None, pre_filter=None):
+    def __init__(self, root, config, split='train', word_emb_mode='w2v', build_graph=False, transform=None, pre_transform=None, pre_filter=None):
 
         self.word_emb_mode = word_emb_mode
         self.build_graph = build_graph
+        self.config = config
 
         super(TOWEDataset, self).__init__(root, transform, pre_transform, pre_filter)
 
@@ -42,7 +43,7 @@ class TOWEDataset(InMemoryDataset):
     def process(self):
 
 
-        processer = Processer(self.root, word_emb_mode=self.word_emb_mode, build_graph=self.build_graph)
+        processer = Processer(self.root, word_emb_mode=self.word_emb_mode, build_graph=self.build_graph, distance_gate=self.config["threshold"])
 
         processer.load_data()
         dataset = processer.process_data()

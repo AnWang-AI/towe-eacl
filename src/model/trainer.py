@@ -28,27 +28,8 @@ sys.path.append('./')
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--config_path', type=str, default='./src/model/conf_bert_gnn_lstm.ini')
-parser.add_argument('--data_path', type=str, default='')
-parser.add_argument('--epochs', type=int, default=None)
-parser.add_argument('--train_batch_size', type=int, default=None)
-parser.add_argument('--load_model_name', type=str, default='')
-parser.add_argument('--save_model_name', type=str, default='')
-parser.add_argument('--eval_frequency', type=int, default=5)
-parser.add_argument('--random_seed', type=int, default=1)
-args = parser.parse_args()
-
-config = Config(args.config_path)
-config.reset_config(args)
-config_dict = config.config_dicts
-default_config = config.config_dicts['default']
-preprocess_config = config.config_dicts['preprocess']
-model_config = config.config_dicts['model']
-
-
 def set_random_seed(seed = 999):
-    seed = args.random_seed
+    seed = seed
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -58,7 +39,7 @@ def set_random_seed(seed = 999):
     torch.backends.cudnn.enable = False
 
 
-def load_data(data_path, train_batch_size=1, val_batch_size=1, use_bert=False, build_graph=False):
+def load_data(data_path, config, train_batch_size=1, val_batch_size=1, use_bert=False, build_graph=False):
 
     if use_bert:
         if build_graph:
@@ -80,9 +61,9 @@ def load_data(data_path, train_batch_size=1, val_batch_size=1, use_bert=False, b
             word_emb_mode = 'w2v'
             build_graph = False
 
-    train_dataset = TOWEDataset(data_path, 'train', word_emb_mode=word_emb_mode, build_graph=build_graph)
-    val_dataset = TOWEDataset(data_path, 'valid', word_emb_mode=word_emb_mode, build_graph=build_graph)
-    test_dataset = TOWEDataset(data_path, 'test', word_emb_mode=word_emb_mode, build_graph=build_graph)
+    train_dataset = TOWEDataset(data_path, config, 'train', word_emb_mode=word_emb_mode, build_graph=build_graph)
+    val_dataset = TOWEDataset(data_path, config, 'valid', word_emb_mode=word_emb_mode, build_graph=build_graph)
+    test_dataset = TOWEDataset(data_path, config, 'test', word_emb_mode=word_emb_mode, build_graph=build_graph)
 
     # new_dataset = []
     # for datas in train_dataset:
@@ -127,13 +108,6 @@ class Trainer():
     def eval(self, detail=False, dataset="valid"):
         # Transfer model mode from train to eval.
         self.model.eval()
-
-        # User GPU.
-        # if self.cuda:
-        #     self.model.cuda()
-        #     print('Eval by GPU ...')
-        # else:
-        #     print('Eval by CPU ...')
 
         assert dataset in ["valid", "test"]
         if dataset == "valid":
@@ -212,7 +186,7 @@ class Trainer():
         print('-' * 40)
         self.model.train()
 
-        return BIO_score
+        return BIO_score, score_dict["precision"], score_dict["recall"]
 
     def train(self, best_accuracy=None):
 
@@ -233,9 +207,13 @@ class Trainer():
             if self.default_config['use_bert']:  ## 使用bert的时候
                 start_to_train_bert_epoch = 10
                 if i >= start_to_train_bert_epoch:
-                    for param_group in self.optimizer.param_groups:
-                        param_group['lr'] = 1e-5
+
+                    self.optimizer = torch.optim.Adam(model.parameters(), lr=1e-5, weight_decay=0)
+
+                    # for param_group in self.optimizer.param_groups:
+                    #     param_group['lr'] = 1e-5
                     trian_bert = True
+
                 else:
                     trian_bert = False
             # else:   ## 不适用bert的时候
@@ -339,19 +317,21 @@ class Trainer():
 
             # Eval every {eval_frequency} train epoch
             if epoch_index % self.args.eval_frequency == 0:
-                dev_score = self.eval(detail=False, dataset="valid")
+                dev_score, dev_p, dev_r = self.eval(detail=False, dataset="valid")
                 if self.fitlog_flag:
-                    fitlog.add_metric({"dev": {"BIO F1": dev_score}}, step=i)
+                    fitlog.add_metric({"dev": {"BIO p": dev_p, "BIO r": dev_r, "BIO F1": dev_score}}, step=i)
 
-                test_score = self.eval(detail=False, dataset="test")
+                test_score, test_p, test_r = self.eval(detail=False, dataset="test")
+                if self.fitlog_flag:
+                    fitlog.add_metric({"test": {"BIO p": test_p, "BIO r": test_r, "BIO F1": test_score}}, step=i)
                 # Save best model
                 if dev_score > best_accuracy:
                     tprint('Best model so far, best dev_score {:.4f} -> {:.4f}'.format(best_accuracy, dev_score))
                     best_accuracy = dev_score
 
                     if self.fitlog_flag:
-                        fitlog.add_best_metric({"dev": {"best BIO F1": best_accuracy}})
-                        fitlog.add_best_metric({"test": {"BIO F1": test_score}})
+                        fitlog.add_best_metric({"dev": {"BIO p": dev_p, "BIO r": dev_r, "BIO F1": best_accuracy}})
+                        fitlog.add_best_metric({"test": {"BIO p": test_p, "BIO r": test_r, "BIO F1": test_score}})
 
                     self.save_model(epoch_index, loss, dev_score, self.args.save_model_name)
 
@@ -442,11 +422,33 @@ class Trainer():
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config_path', type=str, default='./src/model/conf_bert_gnn_lstm.ini')
+    parser.add_argument('--data_path', type=str, default='')
+    parser.add_argument('--epochs', type=int, default=None)
+    parser.add_argument('--num_mid_layers', type=int, default=None)
+    parser.add_argument('--num_heads', type=int, default=None)
+    parser.add_argument('--threshold', type=int, default=None)
+    parser.add_argument('--train_batch_size', type=int, default=None)
+    parser.add_argument('--load_model_name', type=str, default='')
+    parser.add_argument('--save_model_name', type=str, default='')
+    parser.add_argument('--eval_frequency', type=int, default=5)
+    parser.add_argument('--random_seed', type=int, default=1)
+    args = parser.parse_args()
+
+    config = Config(args.config_path)
+    config.reset_config(args)
+    config_dict = config.config_dicts
+    default_config = config.config_dicts['default']
+    preprocess_config = config.config_dicts['preprocess']
+    model_config = config.config_dicts['model']
+
     num_class = model_config["num_class"]
 
-    set_random_seed()
+    set_random_seed(args.random_seed)
 
     loader = load_data(preprocess_config['data_path'],
+                       preprocess_config,
                        model_config['train_batch_size'],
                        model_config['val_batch_size'],
                        default_config['use_bert'],
