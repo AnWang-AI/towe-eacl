@@ -1,6 +1,85 @@
 import argparse
 
 
+def towe_data_to_absa_data_strict(towe_file, absa_file):
+    """
+        将towe的数据格式转换为absa的数据格式
+        并且将同id的合并
+    """
+    with open(absa_file, 'w', encoding='utf-8') as writer:
+        pass
+
+    with open(towe_file, encoding='utf-8') as f:
+        header = f.readline()
+        pre_s_id = "-1"
+        for i in f:
+            s_id, sentence, target_tags, opinion_words_tags = i.strip().split('\t')
+            if s_id != pre_s_id:
+                if pre_s_id != '-1':
+                    with open(absa_file, 'a', encoding='utf-8') as writer:
+                        sample = ''
+                        for index, word in enumerate(pre_sentence.strip().split(' ')):
+                            sample += '%s\t%s\n' % (word, pre_label_map[index])
+                        sample += '#Relations\n'
+                        for relation in pre_relations:
+                            sample += '\t'.join(relation) + '\n'
+                        sample += '\n'
+                        writer.write(sample)
+                label_map = []
+                relations = []
+                for index, word in enumerate(sentence.strip().split(' ')):
+                    label_map.append('O')
+
+            pre_s_id = s_id
+            pre_sentence = sentence
+
+            target_start, target_end = -1, -1
+            for index, word in enumerate(target_tags.strip().split(' ')):
+                label = word[-1]
+                if label == 'B':
+                    label_map[index] = 'B-T'
+                    target_start = index
+                    target_end = index
+                elif label == 'I':
+                    label_map[index] = 'I-T'
+                    target_end = index
+
+            opinion_start, opinion_end = [], []
+            num_opinion = -1
+            new_opinion_flag = True
+            for index, word in enumerate(opinion_words_tags.strip().split(' ')):
+                label = word[-1]
+                if label == 'B':
+                    label_map[index] = 'B-P'
+                    if new_opinion_flag:
+                        num_opinion += 1
+                        opinion_start.append(-1)
+                        opinion_end.append(-1)
+                    opinion_start[num_opinion] = index
+                    opinion_end[num_opinion] = index
+                    new_opinion_flag = True
+                elif label == 'I':
+                    label_map[index] = 'I-P'
+                    opinion_end[num_opinion] = index
+
+            for start, end in zip(opinion_start, opinion_end):
+                relations.append([str(v) for v in [start, end + 1, target_start, target_end + 1]])
+
+            pre_label_map = label_map
+            pre_relations = relations
+
+    # last case
+    with open(absa_file, 'a', encoding='utf-8') as writer:
+        sample = ''
+        for index, word in enumerate(pre_sentence.strip().split(' ')):
+            sample += '%s\t%s\n' % (word, pre_label_map[index])
+        sample += '#Relations\n'
+        for relation in pre_relations:
+            sample += '\t'.join(relation) + '\n'
+        sample += '\n'
+        writer.write(sample)
+
+
 def towe_data_to_absa_data(towe_file, absa_file):
     """
         将towe的数据格式转换为absa的数据格式
@@ -12,26 +91,47 @@ def towe_data_to_absa_data(towe_file, absa_file):
         header = f.readline()
         for i in f:
             s_id, sentence, target_tags, opinion_words_tags = i.strip().split('\t')
-            label_map = {}
-            for word in sentence.strip().split(' '):
-                label_map[word] = 'O'
-            for word in target_tags.strip().split(' '):
+            label_map = []
+            for index, word in enumerate(sentence.strip().split(' ')):
+                label_map.append('O')
+
+            target_start, target_end = -1, -1
+            for index, word in enumerate(target_tags.strip().split(' ')):
                 label = word[-1]
                 if label == 'B':
-                    label_map[word[:-2]] = 'B-T'
+                    label_map[index] = 'B-T'
+                    target_start = index
+                    target_end = index
                 elif label == 'I':
-                    label_map[word[:-2]] = 'I-T'
-            for word in opinion_words_tags.strip().split(' '):
+                    label_map[index] = 'I-T'
+                    target_end = index
+
+            opinion_start, opinion_end = [], []
+            num_opinion = -1
+            new_opinion_flag = True
+            for index, word in enumerate(opinion_words_tags.strip().split(' ')):
                 label = word[-1]
                 if label == 'B':
-                    label_map[word[:-2]] = 'B-P'
+                    label_map[index] = 'B-P'
+                    if new_opinion_flag:
+                        num_opinion += 1
+                        opinion_start.append(-1)
+                        opinion_end.append(-1)
+                    opinion_start[num_opinion] = index
+                    opinion_end[num_opinion] = index
+                    new_opinion_flag = True
                 elif label == 'I':
-                    label_map[word[:-2]] = 'I-P'
+                    label_map[index] = 'I-P'
+                    opinion_end[num_opinion] = index
+
             with open(absa_file, 'a', encoding='utf-8') as writer:
                 sample = ''
-                for word in sentence.strip().split(' '):
-                    sample += '%s\t%s\n' % (word, label_map[word])
-                sample += '#Relations\n\n'
+                for index, word in enumerate(sentence.strip().split(' ')):
+                    sample += '%s\t%s\n' % (word, label_map[index])
+                sample += '#Relations\n'
+                for start, end in zip(opinion_start, opinion_end):
+                    sample += '%s\t%s\t%s\t%s\n' % (start, end + 1, target_start, target_end + 1)
+                sample += '\n'
                 writer.write(sample)
 
 
@@ -90,11 +190,16 @@ def absa_data_to_towe_data(absa_file, towe_file):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--mode', type=str, required=True)
     parser.add_argument('--towe_file', type=str, required=True)
     parser.add_argument('--absa_file', type=str, required=True)
+    parser.add_argument('--strict', action='store_true')
     args = parser.parse_args()
 
-    # towe_data_to_absa_data(towe_file=args.towe_file,
-    #                        absa_file=args.absa_file)
-    absa_data_to_towe_data(absa_file=args.absa_file,
-                           towe_file=args.towe_file)
+    if args.mode == 'towe2absa':
+        if args.strict:
+            towe_data_to_absa_data_strict(towe_file=args.towe_file, absa_file=args.absa_file)
+        else:
+            towe_data_to_absa_data(towe_file=args.towe_file, absa_file=args.absa_file)
+    elif args.mode == 'absa2towe':
+        absa_data_to_towe_data(absa_file=args.absa_file, towe_file=args.towe_file)
