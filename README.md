@@ -17,7 +17,7 @@ fitlog==0.9.13
 #### model
 
 
-#### train
+#### train and evaluate
 
 bash run.sh
 
