@@ -9,7 +9,7 @@ fi
 
 export num_mid_layers=4
 export num_heads=8
-export threshold=1
+export threshold=3
 
 
 CUDA_VISIBLE_DEVICES=0 python main.py \
