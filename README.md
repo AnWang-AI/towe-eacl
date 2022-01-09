@@ -37,6 +37,6 @@ Models and results can be found at our EACL 2021 paper https://www.aclweb.org/an
 
 #### train and evaluate
 
-bash run.sh
+`bash run.sh`
 
 #### result
